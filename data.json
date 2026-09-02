@@ -1,0 +1,231 @@
+{
+  "tasks": [],
+  "courses": [],
+  "coursesList": [
+    {
+      "id": 1,
+      "subject": "Mathématiques",
+      "icon": "🔢",
+      "courses": [
+        {
+          "id": 101,
+          "title": "Théorème de Pythagore",
+          "description": "Connaître et utiliser le théorème de Pythagore",
+          "pdf": "Maths/connaitre-et-utiliser-le-theoreme-de-pythagore_fiche-de-cours.pdf",
+          "date": "2026-02-15"
+        },
+        {
+          "id": 102,
+          "title": "Les Nombres Premiers",
+          "description": "Découvrez les nombres premiers et leurs propriétés",
+          "pdf": "Maths/les-nombres-premiers_fiche-de-cours.pdf",
+          "date": "2026-02-15"
+        },
+        {
+          "id": 103,
+          "title": "Les Racines Carrées",
+          "description": "Comprendre et calculer les racines carrées",
+          "pdf": "Maths/les-racines-carrees_fiche-de-cours.pdf",
+          "date": "2026-02-15"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "subject": "Physique-Chimie",
+      "icon": "⚛️",
+      "courses": [
+        {
+          "id": 201,
+          "title": "Atomes et Réactions Chimiques",
+          "description": "Comprendre les atomes et les réactions chimiques",
+          "pdf": "Physique-Chimie/atomes-et-reactions-chimiques_fiche-de-cours.pdf",
+          "date": "2026-02-15"
+        },
+        {
+          "id": 202,
+          "title": "La Composition de l'Air",
+          "description": "Étude de la composition de l'air",
+          "pdf": "Physique-Chimie/la-composition-de-l-air_fiche-de-cours.pdf",
+          "date": "2026-02-15"
+        },
+        {
+          "id": 203,
+          "title": "Les Changements d'État de l'Eau",
+          "description": "Solide, liquide et gazeux : les changements d'état",
+          "pdf": "Physique-Chimie/les-changements-d-etat-de-l-eau_fiche-de-cours.pdf",
+          "date": "2026-02-15"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "subject": "Histoire",
+      "icon": "📜",
+      "courses": [
+        {
+          "id": 301,
+          "title": "Les Temps Forts de la Révolution",
+          "description": "La Révolution Française de 1789 à 1799",
+          "pdf": "Histoire/les-temps-forts-de-la-revolution-de-1789-a-1799_fiche-de-cours.pdf",
+          "date": "2026-02-15"
+        },
+        {
+          "id": 302,
+          "title": "Napoléon et l'Empire",
+          "description": "De la Révolution à l'Empire (1799-1815)",
+          "pdf": "Histoire/napoleon-de-la-revolution-a-l-empire-1799-1815_fiche-de-cours.pdf",
+          "date": "2026-02-15"
+        },
+        {
+          "id": 303,
+          "title": "L'Europe Industrielle",
+          "description": "L'Europe de la révolution industrielle",
+          "pdf": "Histoire/l-europe-de-la-revolution-industrielle_fiche-de-cours.pdf",
+          "date": "2026-02-15"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "subject": "Géographie",
+      "icon": "🌍",
+      "courses": [
+        {
+          "id": 401,
+          "title": "Un Monde de Migrants",
+          "description": "Les flux migratoires dans le monde",
+          "pdf": "Geographie/un-monde-de-migrants_fiche-de-cours.pdf",
+          "date": "2026-02-15"
+        },
+        {
+          "id": 402,
+          "title": "Urbanisation et Espaces",
+          "description": "Espaces et paysages de l'urbanisation",
+          "pdf": "Geographie/espaces-et-paysages-de-l-urbanisation-geographie-des-centres-et-des-peripheries_fiche-de-cours.pdf",
+          "date": "2026-02-15"
+        },
+        {
+          "id": 403,
+          "title": "Tokyo et la Mondialisation",
+          "description": "Une ville connectée aux flux de la mondialisation",
+          "pdf": "Geographie/une-ville-connectee-aux-flux-de-la-mondialisation-l-exemple-de-tokyo_fiche-de-cours.pdf",
+          "date": "2026-02-15"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "subject": "Français",
+      "icon": "📖",
+      "courses": [
+        {
+          "id": 501,
+          "title": "La Comédie au XVIIIe Siècle",
+          "description": "Étude du genre comique au 18e siècle",
+          "pdf": "Francais/la-comedie-au-xviiie-siecle_fiche-de-cours.pdf",
+          "date": "2026-02-15"
+        },
+        {
+          "id": 502,
+          "title": "La Nouvelle du XVIIIe Siècle",
+          "description": "La nouvelle : de hier à aujourd'hui",
+          "pdf": "Francais/la-nouvelle-du-xviiie-siecle-a-nos-jours_fiche-de-cours.pdf",
+          "date": "2026-02-15"
+        },
+        {
+          "id": 503,
+          "title": "La Poésie Amoureuse",
+          "description": "La poésie amoureuse de l'antiquité à nos jours",
+          "pdf": "Francais/la-poesie-amoureuse-de-l-antiquite-a-nos-jours_fiche-de-cours.pdf",
+          "date": "2026-02-15"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "subject": "Anglais",
+      "icon": "🇬🇧",
+      "courses": [
+        {
+          "id": 601,
+          "title": "Present Simple et Be+ing",
+          "description": "Maîtriser le present simple et le present be+ing",
+          "pdf": "Anglais/present-simple-present-be-ing-anglais_fiche-de-cours.pdf",
+          "date": "2026-02-15"
+        },
+        {
+          "id": 602,
+          "title": "Verbes Irréguliers",
+          "description": "Apprendre les verbes irréguliers en anglais",
+          "pdf": "Anglais/verbes-irreguliers-anglais_fiche-de-cours.pdf",
+          "date": "2026-02-15"
+        },
+        {
+          "id": 603,
+          "title": "Superlatif en Anglais",
+          "description": "Utiliser correctement le superlatif",
+          "pdf": "Anglais/superlatif-anglais_fiche-de-cours.pdf",
+          "date": "2026-02-15"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "subject": "Espagnol",
+      "icon": "🇪🇸",
+      "courses": [
+        {
+          "id": 701,
+          "title": "Ser et Estar",
+          "description": "Apprendre la différence entre Ser et Estar",
+          "pdf": "Espagnol/ser-et-estar_lecon.pdf",
+          "date": "2026-02-15"
+        },
+        {
+          "id": 702,
+          "title": "Le Présent de l'Indicatif",
+          "description": "Conjugaison au présent en espagnol",
+          "pdf": "Espagnol/le-present-de-l-indicatif-en-espagnol_lecon.pdf",
+          "date": "2026-02-15"
+        },
+        {
+          "id": 703,
+          "title": "L'Auxiliaire Haber",
+          "description": "Utiliser correctement Haber en espagnol",
+          "pdf": "Espagnol/l-auxiliaire-haber_lecon.pdf",
+          "date": "2026-02-15"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "subject": "SVT",
+      "icon": "🧬",
+      "courses": [
+        {
+          "id": 801,
+          "title": "La Tectonique des Plaques",
+          "description": "Comprendre la tectonique des plaques",
+          "pdf": "SVT/la-tectonique-des-plaques_fiche-de-cours.pdf",
+          "date": "2026-02-15"
+        },
+        {
+          "id": 802,
+          "title": "Séismes et Risques Associés",
+          "description": "Étude des séismes et des risques sismiques",
+          "pdf": "SVT/seismes-et-risques-associes_fiche-de-cours.pdf",
+          "date": "2026-02-15"
+        },
+        {
+          "id": 803,
+          "title": "Volcanisme et Risques",
+          "description": "Volcanisme et risques associés",
+          "pdf": "SVT/volcanisme-et-risques-associes_fiche-de-cours.pdf",
+          "date": "2026-02-15"
+        }
+      ]
+    }
+  ],
+  "userName": "Baptiste Lecuyot"
+}

@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="description" content="HomeworkPlanner — Organise tes devoirs, notes et cours facilement.">
+    <title>HomeworkPlanner — Baptiste Lecuyot</title>
+    <link rel="stylesheet" href="assets/fonts/Inter/inter.css">
+    <link rel="stylesheet" href="assets/phosphor/regular/style.css">
+    <link rel="stylesheet" href="assets/phosphor/bold/style.css">
+    <link rel="stylesheet" href="assets/phosphor/thin/style.css">
+    <link rel="stylesheet" href="assets/phosphor/light/style.css">
+    <link rel="stylesheet" href="assets/phosphor/fill/style.css">
+    <link rel="stylesheet" href="assets/phosphor/duotone/style.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <!-- ==================== SPLASH SCREEN ==================== -->
+    <div id="splash-screen" role="status" aria-label="Chargement de l'application">
+        <div class="splash-content">
+            <div class="splash-logo-wrap">
+                <div class="splash-logo-icon"><i class="ph-bold ph-student"></i></div>
+            </div>
+            <h1 class="splash-title">HomeWorkPlanner</h1>
+            <div class="splash-loader">
+                <div class="splash-loader-bar"></div>
+            </div>
+            <p class="splash-owner">Baptiste Lecuyot</p>
+        </div>
+    </div>
+
+    <!-- ==================== APP WRAPPER ==================== -->
+    <div class="app-wrapper">
+
+        <!-- ========== SIDEBAR ========== -->
+        <nav class="sidebar" aria-label="Navigation principale">
+            <div class="sidebar-header">
+                <div class="logo-box" aria-hidden="true"><i class="ph-bold ph-student"></i></div>
+                <div class="sidebar-brand">
+                    <h2>Planner</h2>
+                    <span class="sidebar-version">v2.2</span>
+                </div>
+            </div>
+
+            <ul class="nav-menu" role="list">
+                <li class="nav-item active" data-target="page-home" role="listitem" id="nav-home">
+                    <i class="ph ph-house" aria-hidden="true"></i>
+                    <span>Accueil</span>
+                </li>
+                <li class="nav-item" data-target="page-tasks" role="listitem" id="nav-tasks">
+                    <i class="ph ph-check-square" aria-hidden="true"></i>
+                    <span>Mes Devoirs</span>
+                    <span class="nav-badge" id="badge-tasks" style="display:none;"></span>
+                </li>
+                <li class="nav-item" data-target="page-courses" role="listitem" id="nav-courses">
+                    <i class="ph ph-books" aria-hidden="true"></i>
+                    <span>Cours</span>
+                </li>
+                <li class="nav-item" data-target="page-dashboard" role="listitem" id="nav-dashboard">
+                    <i class="ph ph-chart-line-up" aria-hidden="true"></i>
+                    <span>Dashboard</span>
+                </li>
+                <li class="nav-item" data-target="page-grades" role="listitem" id="nav-grades">
+                    <i class="ph ph-exam" aria-hidden="true"></i>
+                    <span>Carnet de notes</span>
+                    <span class="nav-badge nav-badge--accent" id="badge-grades" style="display:none;"></span>
+                </li>
+                <li class="nav-item" data-target="page-schedule" role="listitem" id="nav-schedule">
+                    <i class="ph ph-calendar-blank" aria-hidden="true"></i>
+                    <span>Planning</span>
+                </li>
+                <li class="nav-item" data-target="page-history" role="listitem" id="nav-history">
+                    <i class="ph ph-archive" aria-hidden="true"></i>
+                    <span>Archives</span>
+                </li>
+                <li class="nav-item" data-target="page-settings" role="listitem" id="nav-settings">
+                    <i class="ph ph-gear" aria-hidden="true"></i>
+                    <span>Paramètres</span>
+                </li>
+            </ul>
+
+            <div class="sidebar-footer">
+                <div class="user-profile" title="Profil utilisateur">
+                    <div class="avatar" id="sidebar-avatar" aria-hidden="true">B</div>
+                    <div class="user-info">
+                        <b id="footer-name">Utilisateur</b>
+                        <small class="user-status"><span class="status-dot"></span>En ligne</small>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- ========== MAIN CONTENT ========== -->
+        <main class="main-content" role="main">
+
+            <!-- TOPBAR -->
+            <header class="topbar" role="banner">
+                <div class="topbar-left">
+                    <div class="breadcrumb-wrap">
+                        <i class="ph ph-house breadcrumb-icon" id="breadcrumb-icon" aria-hidden="true"></i>
+                        <span class="breadcrumb" id="topbar-title">Accueil</span>
+                    </div>
+                </div>
+                <div class="topbar-center">
+                    <span class="current-date" id="current-date-display" aria-label="Date d'aujourd'hui"></span>
+                </div>
+                <div class="topbar-right">
+                    <button class="btn btn-primary topbar-btn-quick" id="btn-quick-add" title="Ajouter un devoir rapidement">
+                        <i class="ph ph-plus" aria-hidden="true"></i>
+                        <span>Nouveau devoir</span>
+                    </button>
+                    <button class="btn btn-secondary topbar-btn-save" id="btn-save" title="Sauvegarder">
+                        <i class="ph ph-floppy-disk" aria-hidden="true"></i>
+                    </button>
+                </div>
+            </header>
+
+            <!-- SCROLLABLE CONTENT -->
+            <div class="scrollable-content">
+
+                <!-- ========== PAGE : ACCUEIL ========== -->
+                <section id="page-home" class="content-section" aria-labelledby="home-title">
+                    <div class="hero-section">
+                        <div class="hero-text">
+                            <p class="hero-greeting">Bonjour,</p>
+                            <h1 id="home-title"><span id="display-name" class="highlight-text">Cher Utilisateur</span> 👋</h1>
+                            <p class="hero-subtitle" id="hero-summary">Prêt à organiser ta journée ?</p>
+                        </div>
+                        <div class="hero-quote" id="hero-quote" aria-live="polite">
+                            <i class="ph ph-quotes" aria-hidden="true"></i>
+                            <span id="hero-quote-text">Le travail d'aujourd'hui, c'est le succès de demain.</span>
+                        </div>
+                    </div>
+
+                    <!-- 4 STAT CARDS -->
+                    <div class="stats-grid">
+                        <div class="stat-card stat-card--primary" tabindex="0">
+                            <div class="stat-icon"><i class="ph ph-list-checks" aria-hidden="true"></i></div>
+                            <div class="stat-info">
+                                <span class="stat-value" id="count-total">0</span>
+                                <span class="stat-label">Devoirs à faire</span>
+                            </div>
+                            <div class="stat-trend" id="stat-trend-total"></div>
+                        </div>
+                        <div class="stat-card stat-card--urgent" tabindex="0">
+                            <div class="stat-icon"><i class="ph ph-warning-circle" aria-hidden="true"></i></div>
+                            <div class="stat-info">
+                                <span class="stat-value" id="count-urgent">0</span>
+                                <span class="stat-label">Urgents</span>
+                            </div>
+                        </div>
+                        <div class="stat-card stat-card--success" tabindex="0">
+                            <div class="stat-icon"><i class="ph ph-check-circle" aria-hidden="true"></i></div>
+                            <div class="stat-info">
+                                <span class="stat-value" id="count-done">0</span>
+                                <span class="stat-label">Terminés</span>
+                            </div>
+                        </div>
+                        <div class="stat-card stat-card--accent" tabindex="0">
+                            <div class="stat-icon"><i class="ph ph-trend-up" aria-hidden="true"></i></div>
+                            <div class="stat-info">
+                                <span class="stat-value" id="count-progress">0%</span>
+                                <span class="stat-label">Progression</span>
+                            </div>
+                            <div class="stat-progress-bar-wrap">
+                                <div class="stat-progress-bar" id="stat-progress-bar" style="width:0%"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- UPCOMING TASKS -->
+                    <div class="home-upcoming">
+                        <div class="section-header-sm">
+                            <h3 class="section-title">Devoirs à venir</h3>
+                            <button class="btn-text" id="btn-see-all-tasks">Voir tout <i class="ph ph-arrow-right" aria-hidden="true"></i></button>
+                        </div>
+                        <div id="home-tasks-preview" class="home-tasks-list"></div>
+                    </div>
+                </section>
+
+                <!-- ========== PAGE : DEVOIRS ========== -->
+                <section id="page-tasks" class="content-section" style="display:none;" aria-labelledby="tasks-title">
+                    <div class="section-header">
+                        <h2 id="tasks-title">Mes Devoirs</h2>
+                        <div class="section-header-actions">
+                            <div class="search-bar">
+                                <i class="ph ph-magnifying-glass" aria-hidden="true"></i>
+                                <input type="text" id="search-tasks" placeholder="Rechercher un devoir…" aria-label="Rechercher">
+                            </div>
+                            <select class="filter-select" id="filter-priority" aria-label="Filtrer par priorité">
+                                <option value="">Toutes priorités</option>
+                                <option value="Haute">Haute</option>
+                                <option value="Normale">Normale</option>
+                                <option value="Basse">Basse</option>
+                            </select>
+                            <button class="btn btn-primary" id="btn-add-task">
+                                <i class="ph ph-plus" aria-hidden="true"></i> Nouveau devoir
+                            </button>
+                        </div>
+                    </div>
+                    <!-- Empty state -->
+                    <div id="empty-tasks" class="empty-state" style="display:none;">
+                        <div class="empty-icon"><i class="ph ph-check-square" aria-hidden="true"></i></div>
+                        <h3>Aucun devoir !</h3>
+                        <p>Tu n'as aucun devoir en cours. Profites-en bien… ou ajoutes-en un !</p>
+                        <button class="btn btn-primary" id="btn-add-task-empty"><i class="ph ph-plus"></i> Ajouter un devoir</button>
+                    </div>
+                    <div id="tasks-container" class="tasks-grid"></div>
+                </section>
+
+                <!-- ========== PAGE : COURS ========== -->
+                <section id="page-courses" class="content-section" style="display:none;" aria-labelledby="courses-title">
+                    <div class="section-header">
+                        <h2 id="courses-title">Mes Cours</h2>
+                        <div class="search-bar">
+                            <i class="ph ph-magnifying-glass" aria-hidden="true"></i>
+                            <input type="text" id="search-courses" placeholder="Rechercher un cours…" aria-label="Rechercher un cours">
+                        </div>
+                    </div>
+                    <div id="courses-container" class="courses-container"></div>
+                </section>
+
+                <!-- ========== PAGE : PLANNING ========== -->
+                <section id="page-schedule" class="content-section" style="display:none;" aria-labelledby="schedule-title">
+                    <div class="section-header">
+                        <h2 id="schedule-title">Planning</h2>
+                        <div class="section-header-actions">
+                            <div class="week-selector" role="group" aria-label="Sélection de la semaine">
+                                <button class="btn-week active" data-week="A">Semaine A</button>
+                                <button class="btn-week" data-week="B">Semaine B</button>
+                            </div>
+                            <button class="btn btn-primary" id="btn-add-course">
+                                <i class="ph ph-plus" aria-hidden="true"></i> Nouveau cours
+                            </button>
+                        </div>
+                    </div>
+                    <div class="schedule-grid" id="schedule-grid" role="table" aria-label="Planning de la semaine"></div>
+                </section>
+
+                <!-- ========== PAGE : DASHBOARD ========== -->
+                <section id="page-dashboard" class="content-section" style="display:none;" aria-labelledby="dashboard-title">
+                    <div class="section-header">
+                        <h2 id="dashboard-title">Dashboard Analytique</h2>
+                    </div>
+                    <div class="dashboard-charts-grid">
+                        <div class="chart-card">
+                            <div class="chart-card-header">
+                                <i class="ph ph-chart-pie" aria-hidden="true"></i>
+                                <h3>Répartition par matière</h3>
+                            </div>
+                            <canvas id="chart-subjects" aria-label="Graphique de répartition des devoirs par matière" role="img"></canvas>
+                        </div>
+                        <div class="chart-card">
+                            <div class="chart-card-header">
+                                <i class="ph ph-chart-donut" aria-hidden="true"></i>
+                                <h3>Taux de complétion</h3>
+                            </div>
+                            <canvas id="chart-completion" aria-label="Graphique du taux de complétion des devoirs" role="img"></canvas>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ========== PAGE : CARNET DE NOTES ========== -->
+                <section id="page-grades" class="content-section" style="display:none;" aria-labelledby="grades-title">
+                    <div class="section-header">
+                        <h2 id="grades-title">Carnet de Notes</h2>
+                        <button class="btn btn-primary" id="btn-add-grade">
+                            <i class="ph ph-plus" aria-hidden="true"></i> Nouvelle Note
+                        </button>
+                    </div>
+
+                    <!-- Bannière de statistiques -->
+                    <div class="grades-overview" role="list" aria-label="Statistiques des notes">
+                        <div class="grade-stat-card" role="listitem">
+                            <div class="grade-stat-icon"><i class="ph ph-chart-line-up" aria-hidden="true"></i></div>
+                            <span class="stat-label">Moyenne Générale</span>
+                            <span class="stat-value" id="overall-average">--/20</span>
+                        </div>
+                        <div class="grade-stat-card" role="listitem">
+                            <div class="grade-stat-icon" style="color:var(--success)"><i class="ph ph-trend-up" aria-hidden="true"></i></div>
+                            <span class="stat-label">Meilleure matière</span>
+                            <span class="stat-value" id="grades-best" style="color: var(--success);">--</span>
+                        </div>
+                        <div class="grade-stat-card" role="listitem">
+                            <div class="grade-stat-icon" style="color:var(--urgent)"><i class="ph ph-trend-down" aria-hidden="true"></i></div>
+                            <span class="stat-label">À améliorer</span>
+                            <span class="stat-value" id="grades-worst" style="color: var(--urgent);">--</span>
+                        </div>
+                        <div class="grade-stat-card" role="listitem">
+                            <div class="grade-stat-icon" style="color:var(--accent)"><i class="ph ph-target" aria-hidden="true"></i></div>
+                            <span class="stat-label">Objectif</span>
+                            <div class="target-input-wrap">
+                                <input type="number" id="target-average" value="14" min="0" max="20" class="target-input" aria-label="Objectif de moyenne">
+                                <span class="target-slash">/20</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Graphique par matière -->
+                    <div class="chart-card chart-card--grades" style="margin-bottom: 32px;">
+                        <div class="chart-card-header">
+                            <i class="ph ph-chart-bar" aria-hidden="true"></i>
+                            <h3>Moyennes par matière</h3>
+                        </div>
+                        <canvas id="chart-grades" height="90" aria-label="Graphique des moyennes par matière" role="img"></canvas>
+                    </div>
+
+                    <!-- Empty state -->
+                    <div id="empty-grades" class="empty-state" style="display:none;">
+                        <div class="empty-icon"><i class="ph ph-exam" aria-hidden="true"></i></div>
+                        <h3>Aucune note</h3>
+                        <p>Commence à enregistrer tes notes pour suivre ta progression !</p>
+                        <button class="btn btn-primary" id="btn-add-grade-empty"><i class="ph ph-plus"></i> Ajouter une note</button>
+                    </div>
+
+                    <!-- Liste des notes -->
+                    <h3 class="section-title" style="margin-bottom:20px;">Toutes les notes</h3>
+                    <div id="grades-container" class="grades-grid"></div>
+                </section>
+
+                <!-- ========== PAGE : ARCHIVES ========== -->
+                <section id="page-history" class="content-section" style="display:none;" aria-labelledby="history-title">
+                    <div class="section-header">
+                        <h2 id="history-title">Archives</h2>
+                    </div>
+                    <!-- Empty state -->
+                    <div id="empty-history" class="empty-state" style="display:none;">
+                        <div class="empty-icon"><i class="ph ph-archive" aria-hidden="true"></i></div>
+                        <h3>Aucune archive</h3>
+                        <p>Tes devoirs terminés apparaîtront ici une fois complétés.</p>
+                    </div>
+                    <div id="history-container" class="tasks-grid"></div>
+                </section>
+
+                <!-- ========== PAGE : PARAMÈTRES ========== -->
+                <section id="page-settings" class="content-section" style="display:none;" aria-labelledby="settings-title">
+                    <div class="section-header">
+                        <h2 id="settings-title">Paramètres</h2>
+                    </div>
+                    <div class="settings-container">
+
+                        <div class="settings-card">
+                            <h3><i class="ph ph-user" aria-hidden="true"></i> Profil</h3>
+                            <div class="form-group">
+                                <label for="setting-username">Nom de l'utilisateur</label>
+                                <input type="text" id="setting-username" placeholder="Entrez votre nom" autocomplete="name">
+                            </div>
+                        </div>
+
+                        <div class="settings-card">
+                            <h3><i class="ph ph-palette" aria-hidden="true"></i> Apparence</h3>
+                            <div class="form-group">
+                                <label for="setting-theme">Thème de l'application</label>
+                                <select id="setting-theme">
+                                    <option value="default">Dark Elegance (Sombre Premium)</option>
+                                    <option value="apple">Apple Glassmorphism (Clair)</option>
+                                    <option value="minecraft">Thème Minecraft</option>
+                                    <option value="custom">Thème Personnalisé (Custom)</option>
+                                </select>
+                            </div>
+                            <div id="custom-theme-builder" style="display: none; margin-top: 16px;">
+                                <h4 style="margin-bottom:16px; font-size:1rem;">🎨 Créateur de Thème</h4>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Couleur Principale</label>
+                                        <input type="color" id="theme-color-primary" value="#818cf8">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Couleur Secondaire</label>
+                                        <input type="color" id="theme-color-accent" value="#c084fc">
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Fond Principal</label>
+                                        <input type="color" id="theme-color-bg" value="#020617">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Fond Carte</label>
+                                        <input type="color" id="theme-color-card" value="#1e293b">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="settings-card">
+                            <h3><i class="ph ph-database" aria-hidden="true"></i> Données</h3>
+                            <p class="settings-desc">Exportez ou restaurez vos devoirs, cours et notes.</p>
+                            <div class="settings-actions">
+                                <button class="btn btn-secondary" id="btn-export-data">
+                                    <i class="ph ph-export" aria-hidden="true"></i> Exporter
+                                </button>
+                                <button class="btn btn-secondary" id="btn-import-data">
+                                    <i class="ph ph-download-simple" aria-hidden="true"></i> Importer
+                                </button>
+                                <button class="btn btn-secondary" id="btn-export-ics">
+                                    <i class="ph ph-calendar-plus" aria-hidden="true"></i> Exporter ICS
+                                </button>
+                                <button class="btn btn-secondary" id="btn-import-ics">
+                                    <i class="ph ph-calendar-arrow-down" aria-hidden="true"></i> Importer ICS
+                                </button>
+                                <input type="file" id="in-import-ics-file" accept=".ics" style="display: none;">
+                            </div>
+                        </div>
+
+                        <div class="settings-card">
+                            <h3><i class="ph ph-info" aria-hidden="true"></i> À propos</h3>
+                            <p class="settings-desc">HomeworkPlanner <strong>v2.2.2</strong> — Construit avec Electron.<br>Développé par <strong>Baptiste Lecuyot</strong> (Batsmg0869).</p>
+                        </div>
+                    </div>
+                </section>
+
+            </div><!-- /scrollable-content -->
+        </main>
+    </div><!-- /app-wrapper -->
+
+    <!-- ==================== MODALS ==================== -->
+
+    <!-- Modal Ajouter / Modifier un devoir -->
+    <div id="modal-overlay" class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-task-title">
+        <div class="side-panel">
+            <div class="side-panel-header">
+                <h3 id="modal-task-title">Ajouter un devoir</h3>
+                <button type="button" class="btn-icon" id="btn-close-modal" aria-label="Fermer"><i class="ph ph-x"></i></button>
+            </div>
+            <div class="side-panel-content">
+                <form id="form-task" novalidate>
+                    <div class="form-group">
+                        <label for="in-title">Titre de la tâche</label>
+                        <input type="text" id="in-title" placeholder="Ex: Exercices 1 à 4" required autocomplete="off">
+                    </div>
+                    <div class="form-group">
+                        <label for="in-subject-task">Matière</label>
+                        <input type="text" id="in-subject-task" placeholder="Ex: Mathématiques" required autocomplete="off">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="in-type">Type</label>
+                            <select id="in-type" required>
+                                <option value="Exercice">Exercice</option>
+                                <option value="Révision">Révision</option>
+                                <option value="Projet">Projet</option>
+                                <option value="Évaluation">Évaluation</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="in-priority">Priorité</label>
+                            <select id="in-priority" required>
+                                <option value="Basse">🟢 Basse</option>
+                                <option value="Normale" selected>🔵 Normale</option>
+                                <option value="Haute">🔴 Haute</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="in-date">Date limite</label>
+                            <input type="date" id="in-date" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="in-time">Heure</label>
+                            <input type="time" id="in-time" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="in-desc">Description détaillée</label>
+                        <textarea id="in-desc" rows="3" placeholder="Notes optionnelles…"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Sous-tâches <span class="label-hint">(check-list)</span></label>
+                        <div id="subtasks-container"></div>
+                        <div class="subtask-add-row">
+                            <input type="text" id="in-subtask" placeholder="Nouvelle sous-tâche…">
+                            <button type="button" class="btn btn-secondary btn-sm" id="btn-add-subtask">
+                                <i class="ph ph-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Pièces jointes</label>
+                        <div id="attachments-dropzone" class="dropzone" role="button" tabindex="0" aria-label="Zone de glisser-déposer de fichiers">
+                            <i class="ph ph-upload-simple dropzone-icon" aria-hidden="true"></i>
+                            <p class="dropzone-text">Glissez-déposez des fichiers ici</p>
+                            <p class="dropzone-hint">ou cliquez pour parcourir</p>
+                            <input type="file" id="in-attachments" multiple style="display: none;">
+                        </div>
+                        <ul id="attachments-list" class="attachments-list"></ul>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary w-full">
+                            <i class="ph ph-check" aria-hidden="true"></i> Enregistrer le devoir
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Ajouter / Modifier une note -->
+    <div id="modal-grade" class="modal" role="dialog" aria-modal="true" aria-labelledby="grade-modal-title">
+        <div class="side-panel">
+            <div class="side-panel-header">
+                <h3 id="grade-modal-title">Ajouter une note</h3>
+                <button type="button" class="btn-icon" id="btn-close-grade-modal" aria-label="Fermer"><i class="ph ph-x"></i></button>
+            </div>
+            <div class="side-panel-content">
+                <form id="form-grade" novalidate>
+                    <div class="form-group">
+                        <label for="grade-subject">Matière</label>
+                        <input type="text" id="grade-subject" placeholder="Ex: Mathématiques" required autocomplete="off">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="grade-value">Note <span class="label-hint">(sur 20)</span></label>
+                            <input type="number" id="grade-value" placeholder="14.5" min="0" max="20" step="0.5" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="grade-coef">Coefficient</label>
+                            <input type="number" id="grade-coef" placeholder="1" min="0.5" step="0.5" value="1">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="grade-type">Type d'évaluation</label>
+                        <select id="grade-type">
+                            <option value="Contrôle">Contrôle</option>
+                            <option value="Devoir Maison">Devoir Maison</option>
+                            <option value="Interrogation">Interrogation</option>
+                            <option value="Brevet Blanc">Brevet Blanc</option>
+                            <option value="Autre">Autre</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="grade-date">Date de l'évaluation</label>
+                        <input type="date" id="grade-date">
+                    </div>
+                    <div class="form-group">
+                        <label for="grade-comment">Commentaire <span class="label-hint">(optionnel)</span></label>
+                        <textarea id="grade-comment" rows="3" placeholder="Ex: Thème chapitre 3…"></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary w-full">
+                            <i class="ph ph-check" aria-hidden="true"></i> Enregistrer la note
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Cours (Planning) -->
+    <div id="modal-course" class="modal" role="dialog" aria-modal="true" aria-labelledby="course-modal-title">
+        <div class="side-panel">
+            <div class="side-panel-header">
+                <h3 id="course-modal-title">Gestion du cours</h3>
+                <button type="button" class="btn-icon" id="btn-close-course" aria-label="Fermer"><i class="ph ph-x"></i></button>
+            </div>
+            <div class="side-panel-content">
+                <form id="form-course" novalidate>
+                    <div class="form-group">
+                        <label for="c-subject">Matière</label>
+                        <input type="text" id="c-subject" placeholder="Ex: Histoire" required autocomplete="off">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="c-day">Jour</label>
+                            <select id="c-day" required>
+                                <option value="0">Lundi</option>
+                                <option value="1">Mardi</option>
+                                <option value="2">Mercredi</option>
+                                <option value="3">Jeudi</option>
+                                <option value="4">Vendredi</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="c-week">Semaine</label>
+                            <select id="c-week" required>
+                                <option value="both">Toutes</option>
+                                <option value="A">Semaine A</option>
+                                <option value="B">Semaine B</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="c-start">Début</label>
+                            <input type="time" id="c-start" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="c-end">Fin</label>
+                            <input type="time" id="c-end" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="c-room">Salle</label>
+                            <input type="text" id="c-room" placeholder="Ex: A204">
+                        </div>
+                        <div class="form-group">
+                            <label for="c-prof">Professeur</label>
+                            <input type="text" id="c-prof" placeholder="Nom">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="c-color">Couleur du cours</label>
+                        <div class="color-picker-wrapper">
+                            <input type="color" id="c-color" value="#6366f1">
+                            <span class="color-hint">Couleur du planning</span>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary w-full">
+                            <i class="ph ph-check" aria-hidden="true"></i> Enregistrer le cours
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal PDF Viewer -->
+    <div id="modal-pdf" class="modal" role="dialog" aria-modal="true" aria-labelledby="pdf-title">
+        <div class="modal-pdf-content">
+            <div class="pdf-header">
+                <div class="pdf-header-left">
+                    <i class="ph ph-file-pdf" aria-hidden="true"></i>
+                    <h3 id="pdf-title">Lecture du document</h3>
+                </div>
+                <button id="btn-close-pdf" class="btn-icon" aria-label="Fermer"><i class="ph ph-x"></i></button>
+            </div>
+            <div id="pdf-viewer" class="pdf-viewer" role="document"></div>
+        </div>
+    </div>
+
+    <!-- ==================== TOAST CONTAINER ==================== -->
+    <div id="toast-container" aria-live="polite" aria-atomic="false"></div>
+
+    <script src="assets/js/pdf.min.js"></script>
+    <script src="assets/js/chart.umd.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'assets/js/pdf.worker.min.js';
+        // Update date dynamically
+        const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        const dateStr = new Date().toLocaleDateString('fr-FR', dateOptions);
+        document.getElementById('current-date-display').textContent = dateStr.replace(/^\w/, (c) => c.toUpperCase());
+    </script>
+    <script src="renderer.js"></script>
+</body>
+
+</html>

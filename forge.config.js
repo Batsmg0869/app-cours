@@ -1,0 +1,42 @@
+const { FusesPlugin } = require('@electron-forge/plugin-fuses');
+const { FuseV1Options, FuseVersion } = require('@electron/fuses');
+
+module.exports = {
+  packagerConfig: {
+    asar: true,
+    // L'icône de l'application (barre des tâches et exécutable)
+    // On ne met pas l'extension .ico ici, Electron la gère tout seul
+    icon: './favicon' 
+  },
+  rebuildConfig: {},
+  makers: [
+    {
+      name: '@electron-forge/maker-squirrel',
+      config: {
+        // L'icône qui apparaîtra sur l'installeur .exe et le raccourci bureau
+        setupIcon: './favicon.ico',
+      },
+    },
+    {
+      name: '@electron-forge/maker-zip',
+      platforms: ['darwin', 'linux', 'win32'],
+    },
+  ],
+  plugins: [
+    {
+      name: '@electron-forge/plugin-auto-unpack-natives',
+      config: {},
+    },
+    // Fuses are used to enable/disable various Electron functionality
+    // at package time, before code signing the application
+    new FusesPlugin({
+      version: FuseVersion.V1,
+      [FuseV1Options.RunAsNode]: false,
+      [FuseV1Options.EnableCookieEncryption]: true,
+      [FuseV1Options.EnableNodeOptionsEnvironmentVariable]: false,
+      [FuseV1Options.EnableNodeCliInspectArguments]: false,
+      [FuseV1Options.EnableEmbeddedAsarIntegrityValidation]: true,
+      [FuseV1Options.OnlyLoadAppFromAsar]: true,
+    }),
+  ],
+};

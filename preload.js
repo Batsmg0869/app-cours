@@ -1,0 +1,14 @@
+const { contextBridge, ipcRenderer } = require('electron');
+
+contextBridge.exposeInMainWorld('storage', {
+    save: (data) => ipcRenderer.invoke('save-data', data),
+    load: () => ipcRenderer.invoke('load-data'),
+    openPDF: (pdfPath) => ipcRenderer.invoke('open-pdf', pdfPath),
+    loadPDF: (pdfPath) => ipcRenderer.invoke('load-pdf', pdfPath),
+    downloadPDF: (pdfPath) => ipcRenderer.invoke('download-pdf', pdfPath),
+    exportData: () => ipcRenderer.invoke('export-data'),
+    importData: () => ipcRenderer.invoke('import-data'),
+    saveAttachment: (data) => ipcRenderer.invoke('save-attachment', data),
+    openAttachment: (path) => ipcRenderer.invoke('open-attachment', path),
+    exportICS: (events) => ipcRenderer.invoke('export-ics', events)
+});

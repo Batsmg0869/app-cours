@@ -1,0 +1,32 @@
+{
+  "name": "homework-planner",
+  "version": "2.2.2",
+  "description": "Application de gestion de devoirs pour les étudiants.",
+  "main": "main.js",
+  "author": "Batsmg0869",
+  "scripts": {
+    "start": "electron-forge start",
+    "package": "electron-forge package",
+    "make": "electron-forge make",
+    "build:arch": "bash build-arch.sh",
+    "build:pacman": "bash build-arch.sh"
+  },
+  "devDependencies": {
+    "@electron-forge/cli": "^7.2.0",
+    "@electron-forge/maker-deb": "^7.11.1",
+    "@electron-forge/maker-rpm": "^7.11.1",
+    "@electron-forge/maker-squirrel": "^7.11.1",
+    "@electron-forge/maker-zip": "^7.11.1",
+    "@electron-forge/plugin-auto-unpack-natives": "^7.11.1",
+    "@electron-forge/plugin-fuses": "^7.11.1",
+    "@reforged/maker-appimage": "^5.3.1",
+    "electron": "^28.0.0"
+  },
+  "dependencies": {
+    "@phosphor-icons/web": "^2.1.2",
+    "chart.js": "^4.5.1",
+    "ical.js": "^2.2.1",
+    "ics": "^3.12.0",
+    "pdfjs-dist": "^5.4.624"
+  }
+}
