@@ -392,7 +392,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   // Setup new UI listeners
   const btnQuickAdd = document.getElementById('btn-quick-add');
   if (btnQuickAdd) btnQuickAdd.onclick = () => document.getElementById('btn-add-task').click();
-  
+
   const btnSeeAll = document.getElementById('btn-see-all-tasks');
   if (btnSeeAll) btnSeeAll.onclick = () => switchSection('page-tasks');
 
@@ -413,17 +413,37 @@ window.addEventListener('DOMContentLoaded', async () => {
 
   // Quotes
   const quotes = [
-      "Le travail d'aujourd'hui, c'est le succès de demain.",
-      "Chaque petit pas t'amène plus loin.",
-      "La persévérance est la clé de la réussite.",
-      "Crois en toi, et tout devient possible.",
-      "Un objectif sans plan n'est qu'un souhait."
+    "Le travail d'aujourd'hui, c'est le succès de demain.",
+    "Chaque petit pas t'amène plus loin.",
+    "La persévérance est la clé de la réussite.",
+    "Crois en toi, et tout devient possible.",
+    "Un objectif sans plan n'est qu'un souhait."
   ];
   const quoteEl = document.getElementById('hero-quote-text');
   if (quoteEl) quoteEl.textContent = quotes[Math.floor(Math.random() * quotes.length)];
 
   // Charger la police Minecraft
   await loadMinecraftFont();
+
+  // Fermeture des modals au clic sur l'overlay sombre (en dehors du panneau)
+  document.querySelectorAll('.modal').forEach(modal => {
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        closeModal(modal);
+      }
+    });
+  });
+
+  // Fermeture des modals avec la touche Échap
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      document.querySelectorAll('.modal').forEach(m => {
+        if (m.style.display === 'block' && !m.classList.contains('is-closing')) {
+          closeModal(m);
+        }
+      });
+    }
+  });
 
   console.log("[Initialisation] Application prête et opérationnelle !");
 });
@@ -454,7 +474,7 @@ async function loadData() {
     gradesList = saved.grades || [];
     archiveList = saved.archives || [];
     if (saved.settings && saved.settings.customTheme) {
-        customTheme = saved.settings.customTheme;
+      customTheme = saved.settings.customTheme;
     }
     console.log(`[Stockage] ${taskList.length} tâche(s) et ${courseList.length} cours chargés.`);
   } else {
@@ -542,19 +562,58 @@ function setupWeekToggles() {
   });
 }
 
-// Ouvrir / Fermer modal avec animation
+// Ouvrir / Fermer modal avec animation et focus automatique
 function openModal(modalEl) {
+  if (!modalEl) return;
+  if (modalEl._closeTimeout) {
+    clearTimeout(modalEl._closeTimeout);
+    modalEl._closeTimeout = null;
+  }
+
+  // Fermer les autres modals pour éviter les superpositions d'overlays bloquants
+  document.querySelectorAll('.modal').forEach(m => {
+    if (m !== modalEl && m.style.display !== 'none') {
+      m.style.display = 'none';
+      m.classList.remove('is-closing');
+      if (m._closeTimeout) {
+        clearTimeout(m._closeTimeout);
+        m._closeTimeout = null;
+      }
+    }
+  });
+
   modalEl.classList.remove('is-closing');
   modalEl.style.display = 'block';
+
+  // Désélectionner le bouton cliqué pour éviter de capturer les frappes clavier
+  if (document.activeElement && typeof document.activeElement.blur === 'function') {
+    document.activeElement.blur();
+  }
+
+  // Donner immédiatement le focus au premier champ texte pour pouvoir taper directement
+  setTimeout(() => {
+    const firstInput = modalEl.querySelector('input:not([type="hidden"]):not([disabled]):not([type="color"]):not([type="checkbox"]), textarea:not([disabled]), select:not([disabled])');
+    if (firstInput) {
+      firstInput.focus();
+      if (typeof firstInput.select === 'function' && firstInput.type === 'text') {
+        firstInput.select();
+      }
+    }
+  }, 60);
 }
 
 function closeModal(modalEl) {
+  if (!modalEl) return;
+  if (modalEl._closeTimeout) {
+    clearTimeout(modalEl._closeTimeout);
+  }
   modalEl.classList.add('is-closing');
   // Attendre la fin de l'animation CSS avant de masquer l'élément
   const dur = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--dur-normal')) || 250;
-  setTimeout(() => {
+  modalEl._closeTimeout = setTimeout(() => {
     modalEl.style.display = 'none';
     modalEl.classList.remove('is-closing');
+    modalEl._closeTimeout = null;
   }, dur);
 }
 
@@ -567,16 +626,16 @@ let currentAttachments = [];
 
 // Handle subtasks
 document.getElementById('btn-add-subtask').onclick = () => {
-    const input = document.getElementById('in-subtask');
-    if (input.value.trim()) {
-        currentSubtasks.push({ title: input.value.trim(), done: false });
-        input.value = '';
-        renderSubtasksInput();
-    }
+  const input = document.getElementById('in-subtask');
+  if (input.value.trim()) {
+    currentSubtasks.push({ title: input.value.trim(), done: false });
+    input.value = '';
+    renderSubtasksInput();
+  }
 };
 function renderSubtasksInput() {
-    const container = document.getElementById('subtasks-container');
-    container.innerHTML = currentSubtasks.map((st, i) => `
+  const container = document.getElementById('subtasks-container');
+  container.innerHTML = currentSubtasks.map((st, i) => `
         <div style="display: flex; justify-content: space-between; align-items: center; background: var(--bg-hover); padding: 6px 10px; margin-bottom: 6px; border-radius: 6px;">
             <span>${st.title}</span>
             <button type="button" class="btn-icon danger" style="width: 24px; height: 24px;" onclick="currentSubtasks.splice(${i}, 1); renderSubtasksInput();"><i class="ph ph-x"></i></button>
@@ -591,26 +650,26 @@ dropzone.onclick = () => fileInput.click();
 dropzone.ondragover = (e) => { e.preventDefault(); dropzone.style.borderColor = 'var(--primary)'; };
 dropzone.ondragleave = () => dropzone.style.borderColor = 'var(--border-color)';
 dropzone.ondrop = async (e) => {
-    e.preventDefault();
-    dropzone.style.borderColor = 'var(--border-color)';
-    handleFiles(e.dataTransfer.files);
+  e.preventDefault();
+  dropzone.style.borderColor = 'var(--border-color)';
+  handleFiles(e.dataTransfer.files);
 };
 fileInput.onchange = (e) => handleFiles(e.target.files);
 
 async function handleFiles(files) {
-    for (let f of files) {
-        const res = await window.storage.saveAttachment({ filePath: f.path, fileName: f.name });
-        if (res.success) {
-            currentAttachments.push({ name: res.fileName, path: res.path });
-            renderAttachmentsInput();
-        } else {
-            alert("Erreur lors de l'ajout de la pièce jointe: " + res.error);
-        }
+  for (let f of files) {
+    const res = await window.storage.saveAttachment({ filePath: f.path, fileName: f.name });
+    if (res.success) {
+      currentAttachments.push({ name: res.fileName, path: res.path });
+      renderAttachmentsInput();
+    } else {
+      alert("Erreur lors de l'ajout de la pièce jointe: " + res.error);
     }
+  }
 }
 function renderAttachmentsInput() {
-    const list = document.getElementById('attachments-list');
-    list.innerHTML = currentAttachments.map((att, i) => `
+  const list = document.getElementById('attachments-list');
+  list.innerHTML = currentAttachments.map((att, i) => `
         <li style="display: flex; justify-content: space-between; align-items: center; background: var(--bg-hover); padding: 6px 10px; margin-top: 6px; border-radius: 6px;">
             <span style="font-size: 0.85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">📄 ${att.name}</span>
             <button type="button" class="btn-icon danger" style="width: 24px; height: 24px;" onclick="currentAttachments.splice(${i}, 1); renderAttachmentsInput();"><i class="ph ph-x"></i></button>
@@ -619,12 +678,12 @@ function renderAttachmentsInput() {
 }
 
 document.getElementById('btn-add-task').onclick = () => {
-    currentSubtasks = [];
-    currentAttachments = [];
-    renderSubtasksInput();
-    renderAttachmentsInput();
-    taskForm.reset();
-    openModal(taskModal);
+  currentSubtasks = [];
+  currentAttachments = [];
+  renderSubtasksInput();
+  renderAttachmentsInput();
+  taskForm.reset();
+  openModal(taskModal);
 };
 document.getElementById('btn-close-modal').onclick = () => closeModal(taskModal);
 document.getElementById('btn-close-pdf').onclick = () => closeModal(document.getElementById('modal-pdf'));
@@ -659,23 +718,23 @@ function renderTasks() {
   const emptyState = document.getElementById('empty-tasks');
   if (!container) return;
   container.innerHTML = '';
-  
+
   const searchTerm = (document.getElementById('search-tasks')?.value || '').toLowerCase();
   const filterPrio = document.getElementById('filter-priority')?.value || '';
 
   let filteredTasks = taskList.filter(t => {
-      const matchSearch = t.title.toLowerCase().includes(searchTerm) || t.subject.toLowerCase().includes(searchTerm);
-      const matchPrio = filterPrio ? t.priority === filterPrio : true;
-      return matchSearch && matchPrio;
+    const matchSearch = t.title.toLowerCase().includes(searchTerm) || t.subject.toLowerCase().includes(searchTerm);
+    const matchPrio = filterPrio ? t.priority === filterPrio : true;
+    return matchSearch && matchPrio;
   });
 
   if (filteredTasks.length === 0) {
-      if (emptyState) emptyState.style.display = 'flex';
-      container.style.display = 'none';
-      return;
+    if (emptyState) emptyState.style.display = 'flex';
+    container.style.display = 'none';
+    return;
   } else {
-      if (emptyState) emptyState.style.display = 'none';
-      container.style.display = 'grid';
+    if (emptyState) emptyState.style.display = 'none';
+    container.style.display = 'grid';
   }
 
   // Sort tasks: Incomplete first, then priority, then date
@@ -720,7 +779,7 @@ function renderTasks() {
                         </label>
                     `).join('')}
                     <div style="width: 100%; height: 4px; background: var(--bg-hover); margin-top: 6px; border-radius: 2px;">
-                        <div style="height: 100%; background: var(--primary); border-radius: 2px; width: ${Math.round((t.subtasks.filter(s=>s.done).length / t.subtasks.length)*100)}%;"></div>
+                        <div style="height: 100%; background: var(--primary); border-radius: 2px; width: ${Math.round((t.subtasks.filter(s => s.done).length / t.subtasks.length) * 100)}%;"></div>
                     </div>
                 </div>
             ` : ''}
@@ -740,31 +799,31 @@ function renderTasks() {
             </div>`;
       div.querySelector('input').onchange = async () => {
         t.completed = !t.completed;
-        
+
         if (t.completed && appTheme === 'minecraft') {
-            try {
-                const audio = new Audio('assets/minecraft_xp.mp3');
-                audio.volume = 0.5;
-                audio.play();
-            } catch(e) {}
+          try {
+            const audio = new Audio('assets/minecraft_xp.mp3');
+            audio.volume = 0.5;
+            audio.play();
+          } catch (e) { }
         }
 
         if (t.completed) {
-            div.classList.add('is-removing');
-            setTimeout(async () => {
-                taskList = taskList.filter(x => x.id !== t.id);
-                t.status = 'archived';
-                t.archivedAt = new Date().toISOString();
-                archiveList.push(t);
-                await saveData();
-                renderTasks();
-                updateStats();
-                if (typeof renderHistory === 'function') renderHistory();
-            }, 800);
-        } else {
+          div.classList.add('is-removing');
+          setTimeout(async () => {
+            taskList = taskList.filter(x => x.id !== t.id);
+            t.status = 'archived';
+            t.archivedAt = new Date().toISOString();
+            archiveList.push(t);
             await saveData();
-            updateStats();
             renderTasks();
+            updateStats();
+            if (typeof renderHistory === 'function') renderHistory();
+          }, 800);
+        } else {
+          await saveData();
+          updateStats();
+          renderTasks();
         }
       };
       // Suppression animée : on joue d'abord cardExit, PUIS on retire du DOM
@@ -791,12 +850,12 @@ function renderTasks() {
 }
 
 window.toggleSubtask = async (taskId, subtaskIndex) => {
-    const t = taskList.find(x => x.id === taskId);
-    if (t && t.subtasks && t.subtasks[subtaskIndex]) {
-        t.subtasks[subtaskIndex].done = !t.subtasks[subtaskIndex].done;
-        await saveData();
-        renderTasks();
-    }
+  const t = taskList.find(x => x.id === taskId);
+  if (t && t.subtasks && t.subtasks[subtaskIndex]) {
+    t.subtasks[subtaskIndex].done = !t.subtasks[subtaskIndex].done;
+    await saveData();
+    renderTasks();
+  }
 };
 
 // COURS (COURSES) - La version complète avec ouverture PDF se trouve plus bas (ligne ~1140)
@@ -1047,7 +1106,7 @@ courseForm.onsubmit = async (e) => {
 
   await saveData();
   renderSchedule();
-  courseModal.style.display = 'none';
+  closeModal(courseModal);
 };
 
 function renderSchedule() {
@@ -1114,17 +1173,17 @@ function updateStats() {
   // Render home preview tasks
   const previewContainer = document.getElementById('home-tasks-preview');
   if (previewContainer) {
-      const upcoming = [...activeTasks]
-          .sort((a, b) => new Date(`${a.date}T${a.time}`) - new Date(`${b.date}T${b.time}`))
-          .slice(0, 3);
-      
-      if (upcoming.length === 0) {
-          previewContainer.innerHTML = '<div class="home-empty-msg">Aucun devoir à venir. Repose-toi bien !</div>';
-      } else {
-          previewContainer.innerHTML = upcoming.map(t => {
-              const pClass = (t.priority || 'Normale').toLowerCase();
-              const isOverdue = new Date(`${t.date}T${t.time}`) < new Date();
-              return `
+    const upcoming = [...activeTasks]
+      .sort((a, b) => new Date(`${a.date}T${a.time}`) - new Date(`${b.date}T${b.time}`))
+      .slice(0, 3);
+
+    if (upcoming.length === 0) {
+      previewContainer.innerHTML = '<div class="home-empty-msg">Aucun devoir à venir. Repose-toi bien !</div>';
+    } else {
+      previewContainer.innerHTML = upcoming.map(t => {
+        const pClass = (t.priority || 'Normale').toLowerCase();
+        const isOverdue = new Date(`${t.date}T${t.time}`) < new Date();
+        return `
                   <div class="home-task-row" onclick="switchSection('page-tasks');">
                       <div class="home-task-priority-dot ${pClass}"></div>
                       <div class="home-task-info">
@@ -1136,69 +1195,75 @@ function updateStats() {
                       </div>
                   </div>
               `;
-          }).join('');
-      }
+      }).join('');
+    }
   }
-  
+
   updateSidebarBadges();
   if (typeof renderDashboard === 'function') renderDashboard();
 }
 
-document.getElementById('btn-save').onclick = async () => {
-  await saveData();
-  showToast("Données sauvegardées avec succès !", "success");
-};
+const btnSave = document.getElementById('btn-save');
+if (btnSave) {
+  btnSave.onclick = async (e) => {
+    if (e && e.currentTarget && typeof e.currentTarget.blur === 'function') {
+      e.currentTarget.blur();
+    }
+    await saveData();
+    showToast("Données sauvegardées avec succès !", "success");
+  };
+}
 
 // --- NOUVELLES FONCTIONS UI ---
 function showToast(message, type = 'info') {
-    const container = document.getElementById('toast-container');
-    if (!container) return;
-    const toast = document.createElement('div');
-    toast.className = `toast toast--${type}`;
-    
-    let icon = 'info';
-    if (type === 'success') icon = 'check-circle';
-    if (type === 'error') icon = 'warning-circle';
-    if (type === 'warning') icon = 'warning';
-    
-    toast.innerHTML = `
+  const container = document.getElementById('toast-container');
+  if (!container) return;
+  const toast = document.createElement('div');
+  toast.className = `toast toast--${type}`;
+
+  let icon = 'info';
+  if (type === 'success') icon = 'check-circle';
+  if (type === 'error') icon = 'warning-circle';
+  if (type === 'warning') icon = 'warning';
+
+  toast.innerHTML = `
         <i class="ph ph-${icon} toast-icon"></i>
         <span class="toast-msg">${message}</span>
     `;
-    
-    toast.onclick = () => {
-        toast.classList.add('is-hiding');
-        setTimeout(() => toast.remove(), 300);
-    };
-    
-    container.appendChild(toast);
-    setTimeout(() => {
-        if (document.body.contains(toast)) {
-            toast.classList.add('is-hiding');
-            setTimeout(() => toast.remove(), 300);
-        }
-    }, type === 'error' ? 4000 : 3000);
+
+  toast.onclick = () => {
+    toast.classList.add('is-hiding');
+    setTimeout(() => toast.remove(), 300);
+  };
+
+  container.appendChild(toast);
+  setTimeout(() => {
+    if (document.body.contains(toast)) {
+      toast.classList.add('is-hiding');
+      setTimeout(() => toast.remove(), 300);
+    }
+  }, type === 'error' ? 4000 : 3000);
 }
 
 function updateSidebarBadges() {
-    const pendingTasks = taskList.filter(t => !t.completed).length;
-    const badgeTasks = document.getElementById('badge-tasks');
-    if (badgeTasks) {
-        badgeTasks.style.display = pendingTasks > 0 ? 'inline-block' : 'none';
-        badgeTasks.textContent = pendingTasks;
-    }
-    
-    const recentGrades = gradesList.length > 0 ? gradesList.filter(g => {
-        if (!g.date) return false;
-        const diffTime = Math.abs(new Date() - new Date(g.date));
-        return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) <= 7;
-    }).length : 0;
-    
-    const badgeGrades = document.getElementById('badge-grades');
-    if (badgeGrades) {
-        badgeGrades.style.display = recentGrades > 0 ? 'inline-block' : 'none';
-        badgeGrades.textContent = recentGrades;
-    }
+  const pendingTasks = taskList.filter(t => !t.completed).length;
+  const badgeTasks = document.getElementById('badge-tasks');
+  if (badgeTasks) {
+    badgeTasks.style.display = pendingTasks > 0 ? 'inline-block' : 'none';
+    badgeTasks.textContent = pendingTasks;
+  }
+
+  const recentGrades = gradesList.length > 0 ? gradesList.filter(g => {
+    if (!g.date) return false;
+    const diffTime = Math.abs(new Date() - new Date(g.date));
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) <= 7;
+  }).length : 0;
+
+  const badgeGrades = document.getElementById('badge-grades');
+  if (badgeGrades) {
+    badgeGrades.style.display = recentGrades > 0 ? 'inline-block' : 'none';
+    badgeGrades.textContent = recentGrades;
+  }
 }
 
 // COURS (COURSES)
@@ -1217,17 +1282,17 @@ function renderCourses() {
 
   // Filtrer les cours par recherche
   const filteredCoursesList = coursesList.map(subject => ({
-      ...subject,
-      courses: subject.courses.filter(c => 
-          c.title.toLowerCase().includes(searchTerm) || 
-          c.description.toLowerCase().includes(searchTerm) ||
-          subject.subject.toLowerCase().includes(searchTerm)
-      )
+    ...subject,
+    courses: subject.courses.filter(c =>
+      c.title.toLowerCase().includes(searchTerm) ||
+      c.description.toLowerCase().includes(searchTerm) ||
+      subject.subject.toLowerCase().includes(searchTerm)
+    )
   })).filter(subject => subject.courses.length > 0);
 
   if (filteredCoursesList.length === 0) {
-      container.innerHTML = '<p style="color: var(--text-dim); padding: 40px; text-align: center;">Aucun cours trouvé pour cette recherche.</p>';
-      return;
+    container.innerHTML = '<p style="color: var(--text-dim); padding: 40px; text-align: center;">Aucun cours trouvé pour cette recherche.</p>';
+    return;
   }
 
   filteredCoursesList.forEach(subject => {
@@ -1345,7 +1410,7 @@ function applyTheme(theme) {
   console.log(`[Thème] 🎨 Tentative d'application du thème visuel : "${theme}"...`);
   document.body.removeAttribute('data-theme');
   const customBuilder = document.getElementById('custom-theme-builder');
-  if(customBuilder) customBuilder.style.display = theme === 'custom' ? 'block' : 'none';
+  if (customBuilder) customBuilder.style.display = theme === 'custom' ? 'block' : 'none';
 
   if (theme === 'minecraft') {
     document.body.setAttribute('data-theme', 'minecraft');
@@ -1364,7 +1429,7 @@ function applyTheme(theme) {
     document.documentElement.style.removeProperty('--accent');
     document.documentElement.style.removeProperty('--bg-main');
     document.documentElement.style.removeProperty('--bg-card');
-    console.log("[Thème] ✨ Thème par défaut (Dark Elegance Premium) activé.");
+    console.log("[Thème] ✨ Thème par défaut activé.");
   }
 
   // Loguer la police finale en cours d'utilisation
@@ -1373,17 +1438,17 @@ function applyTheme(theme) {
 }
 
 ['primary', 'accent', 'bg', 'card'].forEach(key => {
-    const el = document.getElementById(`theme-color-${key}`);
-    if (el) {
-        el.value = customTheme[key] || '#000000';
-        el.addEventListener('input', (e) => {
-            customTheme[key] = e.target.value;
-            if (appTheme === 'custom') {
-                applyTheme('custom');
-            }
-            saveData();
-        });
-    }
+  const el = document.getElementById(`theme-color-${key}`);
+  if (el) {
+    el.value = customTheme[key] || '#000000';
+    el.addEventListener('input', (e) => {
+      customTheme[key] = e.target.value;
+      if (appTheme === 'custom') {
+        applyTheme('custom');
+      }
+      saveData();
+    });
+  }
 });
 
 function updateUserName(name) {
@@ -1419,30 +1484,30 @@ document.getElementById('btn-import-data').addEventListener('click', async () =>
 });
 
 document.getElementById('btn-export-ics').addEventListener('click', async () => {
-    const events = [];
-    taskList.forEach(t => {
-        if (!t.date || !t.time) return;
-        const [year, month, day] = t.date.split('-').map(Number);
-        const [hour, minute] = t.time.split(':').map(Number);
-        events.push({
-            title: `[Devoir] ${t.title}`,
-            description: t.desc || '',
-            start: [year, month, day, hour, minute],
-            duration: { hours: 1 }
-        });
+  const events = [];
+  taskList.forEach(t => {
+    if (!t.date || !t.time) return;
+    const [year, month, day] = t.date.split('-').map(Number);
+    const [hour, minute] = t.time.split(':').map(Number);
+    events.push({
+      title: `[Devoir] ${t.title}`,
+      description: t.desc || '',
+      start: [year, month, day, hour, minute],
+      duration: { hours: 1 }
     });
-    
-    if (events.length === 0) {
-        alert("Aucun devoir avec date et heure valide n'a été trouvé.");
-        return;
-    }
-    
-    const result = await window.storage.exportICS(events);
-    if (result && result.success) {
-        alert('Calendrier exporté avec succès vers : ' + result.path);
-    } else if (result && result.error) {
-        alert("Erreur lors de l'export ICS : " + result.error);
-    }
+  });
+
+  if (events.length === 0) {
+    alert("Aucun devoir avec date et heure valide n'a été trouvé.");
+    return;
+  }
+
+  const result = await window.storage.exportICS(events);
+  if (result && result.success) {
+    alert('Calendrier exporté avec succès vers : ' + result.path);
+  } else if (result && result.error) {
+    alert("Erreur lors de l'export ICS : " + result.error);
+  }
 });
 
 document.getElementById('btn-import-ics').addEventListener('click', () => {
@@ -1456,65 +1521,184 @@ document.getElementById('in-import-ics-file').addEventListener('change', (e) => 
   const reader = new FileReader();
   reader.onload = async (event) => {
     const text = event.target.result;
-    
-    // Parse très basique du format ICS
+
+    // ----------------------------------------------------------------
+    // Parse du format ICS (unfold les longues lignes ICS d'abord)
+    // ----------------------------------------------------------------
+    const rawLines = text.replace(/\r?\n[ \t]/g, '').split(/\r?\n/);
     const events = [];
-    const lines = text.split(/\r?\n/);
-    let currentEvent = null;
-    
-    for (const line of lines) {
+    let current = null;
+
+    for (const line of rawLines) {
       if (line.startsWith('BEGIN:VEVENT')) {
-        currentEvent = {};
-      } else if (line.startsWith('END:VEVENT') && currentEvent) {
-        events.push(currentEvent);
-        currentEvent = null;
-      } else if (currentEvent) {
-        if (line.startsWith('SUMMARY:')) currentEvent.subject = line.substring(8);
-        else if (line.startsWith('LOCATION:')) currentEvent.room = line.substring(9);
-        else if (line.startsWith('DTSTART')) {
-          const match = line.match(/:(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})/);
-          if (match) {
-            const date = new Date(Date.UTC(match[1], match[2]-1, match[3], match[4], match[5], match[6]));
-            currentEvent.day = (date.getDay() === 0 ? 6 : date.getDay() - 1); // 0=Lundi, ..., 4=Vendredi
-            currentEvent.start = `${match[4].padStart(2, '0')}:${match[5].padStart(2, '0')}`;
-          }
-        }
-        else if (line.startsWith('DTEND')) {
-          const match = line.match(/:(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})/);
-          if (match) currentEvent.end = `${match[4].padStart(2, '0')}:${match[5].padStart(2, '0')}`;
-        }
+        current = {};
+      } else if (line.startsWith('END:VEVENT') && current) {
+        events.push(current);
+        current = null;
+      } else if (current) {
+        const colonIdx = line.indexOf(':');
+        if (colonIdx < 0) continue;
+        const key = line.substring(0, colonIdx).toUpperCase();
+        const val = line.substring(colonIdx + 1).trim();
+        // Clés avec paramètres (ex: DTSTART;TZID=Europe/Paris:...)
+        const baseKey = key.split(';')[0];
+        current[baseKey] = val;
       }
     }
-    
-    if (events.length > 0) {
-      let importedCount = 0;
-      events.forEach(ev => {
-        if (ev.subject && ev.start && ev.end && ev.day >= 0 && ev.day <= 4) {
-          courseList.push({
-            id: Date.now() + Math.random(),
-            subject: ev.subject,
-            day: ev.day,
-            week: 'both',
-            start: ev.start,
-            end: ev.end,
-            room: ev.room || '',
-            color: '#818cf8' // Default color
-          });
-          importedCount++;
-        }
-      });
-      
-      if (importedCount > 0) {
-        await saveData();
-        renderSchedule();
-        showToast(`${importedCount} cours importé(s) depuis l'ICS !`, 'success');
+
+    // ----------------------------------------------------------------
+    // Mots-clés à ignorer (non-cours)
+    // ----------------------------------------------------------------
+    const IGNORED_KEYWORDS = ['ETUDE', 'REPAS', 'DEVOIRS', 'PERMANENCE', 'VIE DE CLASSE', 'PAUSE'];
+
+    // ----------------------------------------------------------------
+    // Convertir une date ICS en objet Date JavaScript (UTC si Z, local sinon)
+    // ----------------------------------------------------------------
+    function parseICSDate(str) {
+      if (!str) return null;
+      const m = str.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})(Z?)$/);
+      if (!m) return null;
+      if (m[7] === 'Z') {
+        return new Date(Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6]));
       } else {
-        showToast("Aucun cours valide trouvé dans l'ICS.", 'error');
+        return new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6]);
       }
-    } else {
-      showToast("Fichier ICS invalide ou vide.", 'error');
     }
-    
+
+    // ----------------------------------------------------------------
+    // Convertir Date → HH:mm en heure de Paris
+    // ----------------------------------------------------------------
+    function toParisTime(d) {
+      return d.toLocaleTimeString('fr-FR', {
+        timeZone: 'Europe/Paris',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      });
+    }
+
+    // ----------------------------------------------------------------
+    // Jour de la semaine en heure de Paris (0=Lundi … 6=Dimanche)
+    // ----------------------------------------------------------------
+    function toParisDayIndex(d) {
+      const weekday = d.toLocaleDateString('fr-FR', { timeZone: 'Europe/Paris', weekday: 'short' });
+      const map = { 'lun.': 0, 'mar.': 1, 'mer.': 2, 'jeu.': 3, 'ven.': 4, 'sam.': 5, 'dim.': 6 };
+      return map[weekday] ?? 7;
+    }
+
+    // ----------------------------------------------------------------
+    // Numéro de semaine ISO (commence lundi)
+    // ----------------------------------------------------------------
+    function isoWeek(d) {
+      const localStr = d.toLocaleDateString('fr-FR', { timeZone: 'Europe/Paris', year: 'numeric', month: '2-digit', day: '2-digit' });
+      const [day2, month2, year2] = localStr.split('/').map(Number);
+      const target = new Date(year2, month2 - 1, day2);
+      const dayOfWeek = (target.getDay() + 6) % 7;
+      target.setDate(target.getDate() - dayOfWeek + 3);
+      const firstThursday = target.valueOf();
+      target.setMonth(0, 1);
+      if (target.getDay() !== 4) {
+        target.setMonth(0, 1 + ((4 - target.getDay() + 7) % 7));
+      }
+      return 1 + Math.ceil((firstThursday - target) / 604800000);
+    }
+
+    // ----------------------------------------------------------------
+    // Palette de couleurs automatique par matière
+    // ----------------------------------------------------------------
+    const COLOR_PALETTE = [
+      '#818cf8', '#c084fc', '#34d399', '#fb7185', '#60a5fa',
+      '#f59e0b', '#10b981', '#f43f5e', '#8b5cf6', '#06b6d4',
+      '#84cc16', '#ec4899', '#14b8a6', '#f97316', '#6366f1'
+    ];
+    const subjectColors = {};
+    let colorIdx = 0;
+    function getColorForSubject(subj) {
+      if (!subjectColors[subj]) {
+        subjectColors[subj] = COLOR_PALETTE[colorIdx % COLOR_PALETTE.length];
+        colorIdx++;
+      }
+      return subjectColors[subj];
+    }
+
+    // ----------------------------------------------------------------
+    // Regroupement des événements en créneaux hebdomadaires uniques
+    // ----------------------------------------------------------------
+    const slotMap = new Map();
+
+    for (const ev of events) {
+      const summary = (ev['SUMMARY'] || '').trim();
+      if (!summary) continue;
+
+      // Ignorer les événements parasites
+      if (IGNORED_KEYWORDS.some(kw => summary.toUpperCase().includes(kw))) continue;
+
+      const startD = parseICSDate(ev['DTSTART']);
+      const endD = parseICSDate(ev['DTEND']);
+      if (!startD || !endD) continue;
+
+      const dayIdx = toParisDayIndex(startD);
+      if (dayIdx > 4) continue; // Ignorer samedi et dimanche
+
+      const startTime = toParisTime(startD);
+      const endTime = toParisTime(endD);
+
+      // Ignorer les plages journalières (00:01 – 23:59)
+      if (startTime === '00:01' || endTime === '23:59' || startTime === '00:00') continue;
+
+      const room = (ev['LOCATION'] || '').trim();
+      // Extraire le prof depuis DESCRIPTION (format "NOM P. - CLASSE")
+      const descRaw = (ev['DESCRIPTION'] || '').trim();
+      const prof = descRaw.replace(/\s*-\s*\d?[A-Z]{1,4}\d+[A-Z]*\s*$/, '').trim();
+
+      const week = isoWeek(startD);
+      const key = `${dayIdx}|${startTime}-${endTime}|${summary}`;
+
+      if (!slotMap.has(key)) {
+        slotMap.set(key, { day: dayIdx, start: startTime, end: endTime, subject: summary, room, prof, oddCount: 0, evenCount: 0 });
+      }
+      const slot = slotMap.get(key);
+      if (week % 2 !== 0) slot.oddCount++; else slot.evenCount++;
+    }
+
+    if (slotMap.size === 0) {
+      showToast("Aucun cours valide trouvé dans l'ICS.", 'error');
+      e.target.value = '';
+      return;
+    }
+
+    // ----------------------------------------------------------------
+    // Détection semaine A / B / les deux
+    // Convention : semaine A = semaine ISO impaire
+    // ----------------------------------------------------------------
+    let importedCount = 0;
+    for (const slot of slotMap.values()) {
+      let weekType = 'both';
+      if (slot.oddCount > 0 && slot.evenCount === 0) weekType = 'A';
+      else if (slot.evenCount > 0 && slot.oddCount === 0) weekType = 'B';
+
+      courseList.push({
+        id: Date.now() + Math.random(),
+        subject: slot.subject,
+        day: slot.day,
+        week: weekType,
+        start: slot.start,
+        end: slot.end,
+        room: slot.room || '',
+        prof: slot.prof || '',
+        color: getColorForSubject(slot.subject)
+      });
+      importedCount++;
+    }
+
+    if (importedCount > 0) {
+      await saveData();
+      renderSchedule();
+      showToast(`✅ ${importedCount} créneaux importés (${events.length} occurrences regroupées)`, 'success');
+    } else {
+      showToast("Aucun cours valide trouvé dans l'ICS.", 'error');
+    }
+
     // Reset l'input pour pouvoir réimporter le même fichier
     e.target.value = '';
   };
@@ -1525,43 +1709,43 @@ let chartSubjectsInstance = null;
 let chartCompletionInstance = null;
 
 function renderDashboard() {
-    if (typeof Chart === 'undefined') return;
+  if (typeof Chart === 'undefined') return;
 
-    const subjects = {};
-    taskList.forEach(t => {
-        subjects[t.subject] = (subjects[t.subject] || 0) + 1;
-    });
+  const subjects = {};
+  taskList.forEach(t => {
+    subjects[t.subject] = (subjects[t.subject] || 0) + 1;
+  });
 
-    const ctxSub = document.getElementById('chart-subjects').getContext('2d');
-    if (chartSubjectsInstance) chartSubjectsInstance.destroy();
-    chartSubjectsInstance = new Chart(ctxSub, {
-        type: 'pie',
-        data: {
-            labels: Object.keys(subjects),
-            datasets: [{
-                data: Object.values(subjects),
-                backgroundColor: ['#818cf8', '#c084fc', '#34d399', '#fb7185', '#60a5fa']
-            }]
-        },
-        options: { responsive: true, plugins: { legend: { labels: { color: 'white' } } } }
-    });
+  const ctxSub = document.getElementById('chart-subjects').getContext('2d');
+  if (chartSubjectsInstance) chartSubjectsInstance.destroy();
+  chartSubjectsInstance = new Chart(ctxSub, {
+    type: 'pie',
+    data: {
+      labels: Object.keys(subjects),
+      datasets: [{
+        data: Object.values(subjects),
+        backgroundColor: ['#818cf8', '#c084fc', '#34d399', '#fb7185', '#60a5fa']
+      }]
+    },
+    options: { responsive: true, plugins: { legend: { labels: { color: 'white' } } } }
+  });
 
-    const completed = archiveList.length;
-    const pending = taskList.length;
+  const completed = archiveList.length;
+  const pending = taskList.length;
 
-    const ctxComp = document.getElementById('chart-completion').getContext('2d');
-    if (chartCompletionInstance) chartCompletionInstance.destroy();
-    chartCompletionInstance = new Chart(ctxComp, {
-        type: 'doughnut',
-        data: {
-            labels: ['Terminé (Archivé)', 'À faire'],
-            datasets: [{
-                data: [completed, pending],
-                backgroundColor: ['#34d399', '#fb7185']
-            }]
-        },
-        options: { responsive: true, plugins: { legend: { labels: { color: 'white' } } } }
-    });
+  const ctxComp = document.getElementById('chart-completion').getContext('2d');
+  if (chartCompletionInstance) chartCompletionInstance.destroy();
+  chartCompletionInstance = new Chart(ctxComp, {
+    type: 'doughnut',
+    data: {
+      labels: ['Terminé (Archivé)', 'À faire'],
+      datasets: [{
+        data: [completed, pending],
+        backgroundColor: ['#34d399', '#fb7185']
+      }]
+    },
+    options: { responsive: true, plugins: { legend: { labels: { color: 'white' } } } }
+  });
 }
 
 
@@ -1569,17 +1753,17 @@ function renderDashboard() {
 // CARNET DE NOTES
 // ==========================================
 const gradeModal = document.getElementById('modal-grade');
-const gradeForm  = document.getElementById('form-grade');
-let   editingGradeId = null;
-let   chartGradesInstance = null;
+const gradeForm = document.getElementById('form-grade');
+let editingGradeId = null;
+let chartGradesInstance = null;
 
 // Ouvrir le modal d'ajout
 document.getElementById('btn-add-grade').onclick = () => {
-    editingGradeId = null;
-    gradeForm.reset();
-    document.getElementById('grade-coef').value = '1';
-    document.getElementById('grade-modal-title').textContent = 'Ajouter une note';
-    openModal(gradeModal);
+  editingGradeId = null;
+  gradeForm.reset();
+  document.getElementById('grade-coef').value = '1';
+  document.getElementById('grade-modal-title').textContent = 'Ajouter une note';
+  openModal(gradeModal);
 };
 
 // Fermer le modal
@@ -1587,148 +1771,148 @@ document.getElementById('btn-close-grade-modal').onclick = () => closeModal(grad
 
 // Soumission du formulaire
 gradeForm.onsubmit = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    const subject = document.getElementById('grade-subject').value.trim();
-    const grade   = parseFloat(document.getElementById('grade-value').value);
-    const coef    = parseFloat(document.getElementById('grade-coef').value) || 1;
-    const type    = document.getElementById('grade-type').value;
-    const date    = document.getElementById('grade-date').value;
-    const comment = document.getElementById('grade-comment').value.trim();
+  const subject = document.getElementById('grade-subject').value.trim();
+  const grade = parseFloat(document.getElementById('grade-value').value);
+  const coef = parseFloat(document.getElementById('grade-coef').value) || 1;
+  const type = document.getElementById('grade-type').value;
+  const date = document.getElementById('grade-date').value;
+  const comment = document.getElementById('grade-comment').value.trim();
 
-    if (isNaN(grade) || grade < 0 || grade > 20) {
-        alert('Note invalide. Elle doit être comprise entre 0 et 20.');
-        return;
+  if (isNaN(grade) || grade < 0 || grade > 20) {
+    alert('Note invalide. Elle doit être comprise entre 0 et 20.');
+    return;
+  }
+
+  if (editingGradeId) {
+    const idx = gradesList.findIndex(g => g.id === editingGradeId);
+    if (idx !== -1) {
+      gradesList[idx] = { ...gradesList[idx], subject, grade, coef, type, date, comment };
     }
+  } else {
+    gradesList.push({ id: Date.now(), subject, grade, coef, type, date, comment });
+  }
 
-    if (editingGradeId) {
-        const idx = gradesList.findIndex(g => g.id === editingGradeId);
-        if (idx !== -1) {
-            gradesList[idx] = { ...gradesList[idx], subject, grade, coef, type, date, comment };
-        }
-    } else {
-        gradesList.push({ id: Date.now(), subject, grade, coef, type, date, comment });
-    }
-
-    await saveData();
-    closeModal(gradeModal);
-    renderGrades();
+  await saveData();
+  closeModal(gradeModal);
+  renderGrades();
 };
 
 // Écouter les changements sur l'objectif
 document.getElementById('target-average').addEventListener('input', () => renderGrades());
 
 function renderGrades() {
-    const container = document.getElementById('grades-container');
-    if (!container) return;
-    container.innerHTML = '';
+  const container = document.getElementById('grades-container');
+  if (!container) return;
+  container.innerHTML = '';
 
-    // --- Calcul des stats globales ---
-    let totalGrade = 0;
-    let totalCoef  = 0;
-    gradesList.forEach(g => {
-        totalGrade += g.grade * g.coef;
-        totalCoef  += g.coef;
-    });
+  // --- Calcul des stats globales ---
+  let totalGrade = 0;
+  let totalCoef = 0;
+  gradesList.forEach(g => {
+    totalGrade += g.grade * g.coef;
+    totalCoef += g.coef;
+  });
 
-    const average = totalCoef > 0 ? (totalGrade / totalCoef) : null;
-    const target  = parseFloat(document.getElementById('target-average').value) || 14;
+  const average = totalCoef > 0 ? (totalGrade / totalCoef) : null;
+  const target = parseFloat(document.getElementById('target-average').value) || 14;
 
-    // Afficher la moyenne générale
-    const avgEl = document.getElementById('overall-average');
-    if (avgEl) {
-        avgEl.textContent = average !== null ? average.toFixed(2) + '/20' : '--/20';
-        avgEl.style.color = average !== null
-            ? (average >= target ? 'var(--success)' : 'var(--urgent)')
-            : 'var(--text-main)';
-    }
+  // Afficher la moyenne générale
+  const avgEl = document.getElementById('overall-average');
+  if (avgEl) {
+    avgEl.textContent = average !== null ? average.toFixed(2) + '/20' : '--/20';
+    avgEl.style.color = average !== null
+      ? (average >= target ? 'var(--success)' : 'var(--urgent)')
+      : 'var(--text-main)';
+  }
 
-    // Meilleures et pires matières (par moyenne)
-    const bySubject = {};
-    gradesList.forEach(g => {
-        if (!bySubject[g.subject]) bySubject[g.subject] = { total: 0, coef: 0 };
-        bySubject[g.subject].total += g.grade * g.coef;
-        bySubject[g.subject].coef  += g.coef;
-    });
-    const subjectAverages = Object.entries(bySubject).map(([name, v]) => ({
-        name, avg: v.coef > 0 ? v.total / v.coef : 0
-    }));
-    subjectAverages.sort((a, b) => b.avg - a.avg);
+  // Meilleures et pires matières (par moyenne)
+  const bySubject = {};
+  gradesList.forEach(g => {
+    if (!bySubject[g.subject]) bySubject[g.subject] = { total: 0, coef: 0 };
+    bySubject[g.subject].total += g.grade * g.coef;
+    bySubject[g.subject].coef += g.coef;
+  });
+  const subjectAverages = Object.entries(bySubject).map(([name, v]) => ({
+    name, avg: v.coef > 0 ? v.total / v.coef : 0
+  }));
+  subjectAverages.sort((a, b) => b.avg - a.avg);
 
-    const bestEl  = document.getElementById('grades-best');
-    const worstEl = document.getElementById('grades-worst');
-    if (bestEl)  bestEl.textContent  = subjectAverages.length > 0 ? `${subjectAverages[0].name} (${subjectAverages[0].avg.toFixed(1)})` : '--';
-    if (worstEl) worstEl.textContent = subjectAverages.length > 0 ? `${subjectAverages[subjectAverages.length - 1].name} (${subjectAverages[subjectAverages.length - 1].avg.toFixed(1)})` : '--';
+  const bestEl = document.getElementById('grades-best');
+  const worstEl = document.getElementById('grades-worst');
+  if (bestEl) bestEl.textContent = subjectAverages.length > 0 ? `${subjectAverages[0].name} (${subjectAverages[0].avg.toFixed(1)})` : '--';
+  if (worstEl) worstEl.textContent = subjectAverages.length > 0 ? `${subjectAverages[subjectAverages.length - 1].name} (${subjectAverages[subjectAverages.length - 1].avg.toFixed(1)})` : '--';
 
-    // --- Graphique barres par matière ---
-    const ctxGrades = document.getElementById('chart-grades');
-    if (ctxGrades && typeof Chart !== 'undefined') {
-        if (chartGradesInstance) chartGradesInstance.destroy();
-        const colors = subjectAverages.map(s =>
-            s.avg >= target ? 'rgba(52, 211, 153, 0.8)' : 'rgba(251, 113, 133, 0.8)'
-        );
-        chartGradesInstance = new Chart(ctxGrades.getContext('2d'), {
-            type: 'bar',
-            data: {
-                labels: subjectAverages.map(s => s.name),
-                datasets: [{
-                    label: 'Moyenne /20',
-                    data: subjectAverages.map(s => parseFloat(s.avg.toFixed(2))),
-                    backgroundColor: colors,
-                    borderColor: colors.map(c => c.replace('0.8', '1')),
-                    borderWidth: 1,
-                    borderRadius: 6,
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    y: {
-                        min: 0, max: 20,
-                        ticks: { color: 'rgba(255,255,255,0.6)' },
-                        grid:  { color: 'rgba(255,255,255,0.05)' }
-                    },
-                    x: {
-                        ticks: { color: 'rgba(255,255,255,0.6)' },
-                        grid:  { display: false }
-                    }
-                },
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        callbacks: {
-                            label: ctx => ` ${ctx.parsed.y}/20`
-                        }
-                    },
-                    // Ligne d'objectif
-                    annotation: undefined
-                }
+  // --- Graphique barres par matière ---
+  const ctxGrades = document.getElementById('chart-grades');
+  if (ctxGrades && typeof Chart !== 'undefined') {
+    if (chartGradesInstance) chartGradesInstance.destroy();
+    const colors = subjectAverages.map(s =>
+      s.avg >= target ? 'rgba(52, 211, 153, 0.8)' : 'rgba(251, 113, 133, 0.8)'
+    );
+    chartGradesInstance = new Chart(ctxGrades.getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: subjectAverages.map(s => s.name),
+        datasets: [{
+          label: 'Moyenne /20',
+          data: subjectAverages.map(s => parseFloat(s.avg.toFixed(2))),
+          backgroundColor: colors,
+          borderColor: colors.map(c => c.replace('0.8', '1')),
+          borderWidth: 1,
+          borderRadius: 6,
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          y: {
+            min: 0, max: 20,
+            ticks: { color: 'rgba(255,255,255,0.6)' },
+            grid: { color: 'rgba(255,255,255,0.05)' }
+          },
+          x: {
+            ticks: { color: 'rgba(255,255,255,0.6)' },
+            grid: { display: false }
+          }
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: ctx => ` ${ctx.parsed.y}/20`
             }
-        });
-    }
-
-    // --- Affichage des cartes de notes ---
-    const emptyState = document.getElementById('empty-grades');
-    if (gradesList.length === 0) {
-        if (emptyState) emptyState.style.display = 'flex';
-        container.style.display = 'none';
-        return;
-    } else {
-        if (emptyState) emptyState.style.display = 'none';
-        container.style.display = 'grid';
-    }
-
-    // Trier par date décroissante, puis par matière
-    const sorted = [...gradesList].sort((a, b) => {
-        if (a.date && b.date) return new Date(b.date) - new Date(a.date);
-        return 0;
+          },
+          // Ligne d'objectif
+          annotation: undefined
+        }
+      }
     });
+  }
 
-    sorted.forEach(g => {
-        const noteColor = g.grade >= target ? 'var(--success)' : g.grade >= target * 0.7 ? 'var(--primary)' : 'var(--urgent)';
-        const card = document.createElement('div');
-        card.className = 'grade-card';
-        card.innerHTML = `
+  // --- Affichage des cartes de notes ---
+  const emptyState = document.getElementById('empty-grades');
+  if (gradesList.length === 0) {
+    if (emptyState) emptyState.style.display = 'flex';
+    container.style.display = 'none';
+    return;
+  } else {
+    if (emptyState) emptyState.style.display = 'none';
+    container.style.display = 'grid';
+  }
+
+  // Trier par date décroissante, puis par matière
+  const sorted = [...gradesList].sort((a, b) => {
+    if (a.date && b.date) return new Date(b.date) - new Date(a.date);
+    return 0;
+  });
+
+  sorted.forEach(g => {
+    const noteColor = g.grade >= target ? 'var(--success)' : g.grade >= target * 0.7 ? 'var(--primary)' : 'var(--urgent)';
+    const card = document.createElement('div');
+    card.className = 'grade-card';
+    card.innerHTML = `
             <div class="grade-card-score" style="color: ${noteColor};">
                 <span class="grade-value">${g.grade}</span>
                 <span class="grade-max">/20</span>
@@ -1748,52 +1932,52 @@ function renderGrades() {
             </div>
         `;
 
-        // Bouton modifier
-        card.querySelector('.btn-edit-grade').onclick = () => {
-            editingGradeId = g.id;
-            document.getElementById('grade-subject').value = g.subject;
-            document.getElementById('grade-value').value   = g.grade;
-            document.getElementById('grade-coef').value    = g.coef;
-            document.getElementById('grade-type').value    = g.type || 'Contrôle';
-            document.getElementById('grade-date').value    = g.date || '';
-            document.getElementById('grade-comment').value = g.comment || '';
-            document.getElementById('grade-modal-title').textContent = 'Modifier la note';
-            openModal(gradeModal);
-        };
+    // Bouton modifier
+    card.querySelector('.btn-edit-grade').onclick = () => {
+      editingGradeId = g.id;
+      document.getElementById('grade-subject').value = g.subject;
+      document.getElementById('grade-value').value = g.grade;
+      document.getElementById('grade-coef').value = g.coef;
+      document.getElementById('grade-type').value = g.type || 'Contrôle';
+      document.getElementById('grade-date').value = g.date || '';
+      document.getElementById('grade-comment').value = g.comment || '';
+      document.getElementById('grade-modal-title').textContent = 'Modifier la note';
+      openModal(gradeModal);
+    };
 
-        // Bouton supprimer
-        card.querySelector('.btn-delete-grade').onclick = async () => {
-            card.style.animation = 'cardExit 0.25s ease forwards';
-            setTimeout(async () => {
-                gradesList = gradesList.filter(x => x.id !== g.id);
-                await saveData();
-                renderGrades();
-            }, 250);
-        };
+    // Bouton supprimer
+    card.querySelector('.btn-delete-grade').onclick = async () => {
+      card.style.animation = 'cardExit 0.25s ease forwards';
+      setTimeout(async () => {
+        gradesList = gradesList.filter(x => x.id !== g.id);
+        await saveData();
+        renderGrades();
+      }, 250);
+    };
 
-        container.appendChild(card);
-    });
+    container.appendChild(card);
+  });
 }
 
 function renderHistory() {
-    const container = document.getElementById('history-container');
-    if (!container) return;
-    container.innerHTML = '';
-    
-    const emptyState = document.getElementById('empty-history');
-    if (archiveList.length === 0) {
-        if (emptyState) emptyState.style.display = 'flex';
-        container.style.display = 'none';
-        return;
-    } else {
-        if (emptyState) emptyState.style.display = 'none';
-        container.style.display = 'grid';
-    }
+  const container = document.getElementById('history-container');
+  if (!container) return;
+  container.innerHTML = '';
 
-    archiveList.sort((a,b) => new Date(b.archivedAt) - new Date(a.archivedAt)).forEach(t => {
-        const div = document.createElement('div');
-        div.className = 'task-card completed';
-        div.innerHTML = `
+  const emptyState = document.getElementById('empty-history');
+  if (archiveList.length === 0) {
+    if (emptyState) emptyState.style.display = 'flex';
+    container.style.display = 'none';
+    return;
+  } else {
+    if (emptyState) emptyState.style.display = 'none';
+    container.style.display = 'grid';
+  }
+
+  archiveList.sort((a, b) => new Date(b.archivedAt) - new Date(a.archivedAt)).forEach(t => {
+    const div = document.createElement('div');
+    div.className = 'task-card completed';
+    div.innerHTML = `
             <div class="task-header">
                 <div class="task-badges">
                     <span class="task-badge">${t.subject}</span>
@@ -1803,6 +1987,6 @@ function renderHistory() {
             <div class="task-title" style="text-decoration: line-through;">${t.title}</div>
             <div class="task-desc">Terminé et archivé le: ${new Date(t.archivedAt).toLocaleString('fr-FR')}</div>
         `;
-        container.appendChild(div);
-    });
+    container.appendChild(div);
+  });
 }

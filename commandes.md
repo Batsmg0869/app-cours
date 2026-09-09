@@ -68,3 +68,15 @@ npm run make
 ```
 Les paquets seront dans `out/make/deb/x64/` et `out/make/rpm/x64/`.
 
+## 4. Créer l'installateur Windows
+
+Depuis Windows (PowerShell, CMD ou Git Bash), lancez :
+```bash
+npm run build:windows
+```
+
+L'installateur généré se trouve dans :
+`out/make/squirrel.windows/x64/`
+
+Le fichier `Setup.exe` permet d'installer l'application sur Windows. Le dossier `out/homework-planner-win32-x64/` reste une version portable créée par `npm run package`.
+
