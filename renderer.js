@@ -382,12 +382,21 @@ window.addEventListener('DOMContentLoaded', async () => {
 
   await loadData();
 
+  // Déclencher l'onboarding au premier lancement
+  if (!_onboardingDone) {
+    startOnboarding(0);
+  }
+
   console.log("[Initialisation] Rendu initial de l'interface utilisateur...");
   renderTasks();
   renderCourses();
   renderSchedule();
   updateStats();
   setupWeekToggles();
+
+  // Bouton "Revoir le tutoriel" dans Paramètres
+  const btnReplay = document.getElementById('btn-replay-tutorial');
+  if (btnReplay) btnReplay.addEventListener('click', () => startOnboarding(1)); // commence à slide 1 (slide prénom déjà faite)
 
   // Setup new UI listeners
   const btnQuickAdd = document.getElementById('btn-quick-add');
@@ -461,6 +470,8 @@ window.addEventListener('load', () => {
 });
 
 // SAUVEGARDE / CHARGEMENT
+let _onboardingDone = false; // flag premier lancement
+
 async function loadData() {
   console.log("[Stockage] 💾 Chargement des données utilisateur sauvegardées...");
   const saved = await window.storage.load();
@@ -469,16 +480,22 @@ async function loadData() {
     console.log("[Stockage] ✓ Données trouvées dans le stockage local.");
     taskList = saved.tasks || [];
     courseList = saved.courses || [];
+    // Fix : restaurer coursesList depuis la sauvegarde si disponible
+    if (saved.coursesList && Array.isArray(saved.coursesList) && saved.coursesList.length > 0) {
+      coursesList = saved.coursesList;
+    }
     userName = saved.userName || "Baptiste Lecuyot";
     appTheme = saved.appTheme || "default";
     gradesList = saved.grades || [];
     archiveList = saved.archives || [];
+    _onboardingDone = saved.onboardingDone === true;
     if (saved.settings && saved.settings.customTheme) {
       customTheme = saved.settings.customTheme;
     }
     console.log(`[Stockage] ${taskList.length} tâche(s) et ${courseList.length} cours chargés.`);
   } else {
     console.log("[Stockage] ℹ️ Aucune donnée utilisateur existante. Chargement des valeurs par défaut.");
+    _onboardingDone = false;
   }
 
   console.log(`[Stockage] Configuration du profil utilisateur au nom de : "${userName}"`);
@@ -498,10 +515,155 @@ async function saveData() {
     appTheme: appTheme,
     grades: gradesList,
     archives: archiveList,
+    onboardingDone: _onboardingDone,
     settings: { customTheme: customTheme }
   });
   console.log("[Stockage] ✓ Sauvegarde réussie des tâches, cours et paramètres.");
 }
+
+// =====================================================
+// ONBOARDING — Premier lancement + Tutoriel
+// =====================================================
+const ONBOARDING_TOTAL = 6;
+let _onboardingStep = 0;
+let _onboardingGoingBack = false;
+
+function startOnboarding(fromStep = 0) {
+  _onboardingStep = fromStep;
+  _onboardingGoingBack = false;
+  const overlay = document.getElementById('onboarding-overlay');
+  if (!overlay) return;
+  overlay.style.display = 'flex';
+  overlay.classList.remove('is-hiding');
+  _renderOnboardingStep(false);
+
+  // Focus auto sur le champ prénom si slide 0
+  if (fromStep === 0) {
+    setTimeout(() => {
+      const inp = document.getElementById('onboarding-name-input');
+      if (inp) inp.focus();
+    }, 400);
+  }
+}
+
+function _renderOnboardingStep(goingBack = false) {
+  const slides = document.querySelectorAll('.onboarding-slide');
+  const dots   = document.querySelectorAll('#onboarding-dots .dot');
+  const btnPrev = document.getElementById('btn-prev-onboarding');
+  const btnNext = document.getElementById('btn-next-onboarding');
+  const isLast  = _onboardingStep === ONBOARDING_TOTAL - 1;
+
+  // Mise à jour des dots
+  dots.forEach((dot, i) => {
+    dot.classList.remove('active', 'done');
+    if (i < _onboardingStep)  dot.classList.add('done');
+    if (i === _onboardingStep) dot.classList.add('active');
+  });
+
+  // Mise à jour des slides avec animation
+  slides.forEach((slide, i) => {
+    slide.classList.remove('active', 'slide-out', 'slide-in-back');
+    if (i === _onboardingStep) {
+      slide.classList.add(goingBack ? 'slide-in-back' : 'active');
+    }
+  });
+
+  // Bouton Précédent
+  if (btnPrev) {
+    btnPrev.style.visibility = _onboardingStep === 0 ? 'hidden' : 'visible';
+  }
+
+  // Bouton Suivant / Terminer
+  if (btnNext) {
+    if (isLast) {
+      btnNext.innerHTML = 'Commencer <i class="ph ph-rocket-launch"></i>';
+      btnNext.className = 'btn btn-primary';
+    } else {
+      btnNext.innerHTML = 'Suivant <i class="ph ph-arrow-right"></i>';
+      btnNext.className = 'btn btn-primary';
+    }
+  }
+
+  // Sync prénom dans le champ si on y revient
+  if (_onboardingStep === 0) {
+    const inp = document.getElementById('onboarding-name-input');
+    if (inp && userName && userName !== 'Baptiste Lecuyot') inp.value = userName;
+  }
+}
+
+function _nextOnboardingStep() {
+  // Slide 0 : validation prénom obligatoire
+  if (_onboardingStep === 0) {
+    const inp = document.getElementById('onboarding-name-input');
+    const val = inp ? inp.value.trim() : '';
+    if (!val) {
+      inp.focus();
+      inp.style.borderColor = 'var(--urgent)';
+      inp.style.boxShadow = '0 0 0 3px rgba(251,113,133,0.25)';
+      setTimeout(() => {
+        inp.style.borderColor = '';
+        inp.style.boxShadow = '';
+      }, 1500);
+      return;
+    }
+    // Appliquer le prénom immédiatement
+    userName = val;
+    updateUserName(userName);
+  }
+
+  if (_onboardingStep < ONBOARDING_TOTAL - 1) {
+    _onboardingGoingBack = false;
+    _onboardingStep++;
+    _renderOnboardingStep(false);
+  } else {
+    _finishOnboarding();
+  }
+}
+
+function _prevOnboardingStep() {
+  if (_onboardingStep > 0) {
+    _onboardingGoingBack = true;
+    _onboardingStep--;
+    _renderOnboardingStep(true);
+  }
+}
+
+async function _finishOnboarding() {
+  const overlay = document.getElementById('onboarding-overlay');
+  if (overlay) {
+    overlay.classList.add('is-hiding');
+    setTimeout(() => { overlay.style.display = 'none'; }, 380);
+  }
+  _onboardingDone = true;
+  updateUserName(userName);
+  await saveData();
+  console.log('[Onboarding] Tutoriel terminé. onboardingDone sauvegardé.');
+}
+
+function _skipOnboarding() {
+  // Si slide 0 : on essaie de récupérer le prénom quand même
+  const inp = document.getElementById('onboarding-name-input');
+  const val = inp ? inp.value.trim() : '';
+  if (val) { userName = val; updateUserName(userName); }
+  _finishOnboarding();
+}
+
+// Liaison des boutons de navigation
+document.addEventListener('DOMContentLoaded', () => {
+  const btnNext = document.getElementById('btn-next-onboarding');
+  const btnPrev = document.getElementById('btn-prev-onboarding');
+  const btnSkip = document.getElementById('btn-skip-onboarding');
+
+  if (btnNext) btnNext.addEventListener('click', _nextOnboardingStep);
+  if (btnPrev) btnPrev.addEventListener('click', _prevOnboardingStep);
+  if (btnSkip) btnSkip.addEventListener('click', _skipOnboarding);
+
+  // Touche Entrée dans le champ prénom → slide suivante
+  const nameInp = document.getElementById('onboarding-name-input');
+  if (nameInp) nameInp.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); _nextOnboardingStep(); }
+  });
+});
 
 // NAVIGATION - Transitions animées entre sections
 const NAV_LABELS = {

@@ -31,6 +31,118 @@
         </div>
     </div>
 
+    <!-- ==================== ONBOARDING OVERLAY ==================== -->
+    <div id="onboarding-overlay" class="onboarding-overlay" style="display: none;">
+        <div class="onboarding-card">
+            <!-- Header bar with step indicator -->
+            <div class="onboarding-header">
+                <div class="onboarding-steps-indicator" id="onboarding-dots">
+                    <span class="dot active"></span>
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                </div>
+                <button type="button" class="onboarding-skip" id="btn-skip-onboarding" title="Passer le tutoriel">Passer</button>
+            </div>
+
+            <!-- Slide Container -->
+            <div class="onboarding-slides" id="onboarding-slides">
+                <!-- Slide 0 : Saisie prénom -->
+                <div class="onboarding-slide active" data-step="0">
+                    <div class="onboarding-icon-wrap glow-primary">
+                        <i class="ph-duotone ph-sparkle"></i>
+                    </div>
+                    <h2>Bienvenue sur HomeworkPlanner !</h2>
+                    <p class="onboarding-subtitle">Ton nouvel assistant pour organiser tes cours, devoirs et révisions.</p>
+                    <div class="onboarding-input-group">
+                        <label for="onboarding-name-input">Quel est ton prénom ?</label>
+                        <div class="onboarding-field-wrap">
+                            <i class="ph ph-user"></i>
+                            <input type="text" id="onboarding-name-input" placeholder="Entre ton prénom..." maxlength="40" autocomplete="given-name">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Slide 1 : Devoirs -->
+                <div class="onboarding-slide" data-step="1">
+                    <div class="onboarding-icon-wrap glow-tasks">
+                        <i class="ph-duotone ph-check-square-offset"></i>
+                    </div>
+                    <h2>Gestion de tes Devoirs</h2>
+                    <p class="onboarding-subtitle">Organise ton travail efficacement et ne manque aucune date limite.</p>
+                    <ul class="onboarding-features">
+                        <li><i class="ph-bold ph-check"></i> Ajoute des devoirs avec niveau de priorité (Haute, Normale, Basse)</li>
+                        <li><i class="ph-bold ph-check"></i> Décompose en sous-tâches et rejoins des fichiers joints</li>
+                        <li><i class="ph-bold ph-check"></i> Suis tes devoirs urgents directement depuis l'accueil</li>
+                    </ul>
+                </div>
+
+                <!-- Slide 2 : Cours -->
+                <div class="onboarding-slide" data-step="2">
+                    <div class="onboarding-icon-wrap glow-courses">
+                        <i class="ph-duotone ph-books"></i>
+                    </div>
+                    <h2>Tes Cours & Fiches PDF</h2>
+                    <p class="onboarding-subtitle">Tous tes cours et documents accessibles au même endroit.</p>
+                    <ul class="onboarding-features">
+                        <li><i class="ph-bold ph-check"></i> Accède aux fiches de cours PDF pré-intégrées (Maths, Physique...)</li>
+                        <li><i class="ph-bold ph-check"></i> Lis ou télécharge les documents directement dans l'application</li>
+                        <li><i class="ph-bold ph-check"></i> Ajoute tes propres chapitres et cours personnalisés</li>
+                    </ul>
+                </div>
+
+                <!-- Slide 3 : Planning -->
+                <div class="onboarding-slide" data-step="3">
+                    <div class="onboarding-icon-wrap glow-schedule">
+                        <i class="ph-duotone ph-calendar-blank"></i>
+                    </div>
+                    <h2>Planning & Semaines A / B</h2>
+                    <p class="onboarding-subtitle">Visualise ton emploi du temps hebdomadaire facilement.</p>
+                    <ul class="onboarding-features">
+                        <li><i class="ph-bold ph-check"></i> Bascule en un clic entre Semaine A et Semaine B</li>
+                        <li><i class="ph-bold ph-check"></i> <b>Importation ICS :</b> charge ton emploi du temps Pronote/EcoleDirecte depuis les Paramètres !</li>
+                    </ul>
+                </div>
+
+                <!-- Slide 4 : Carnet de Notes -->
+                <div class="onboarding-slide" data-step="4">
+                    <div class="onboarding-icon-wrap glow-grades">
+                        <i class="ph-duotone ph-exam"></i>
+                    </div>
+                    <h2>Carnet de Notes & Objectifs</h2>
+                    <p class="onboarding-subtitle">Suis tes moyennes et vise l'excellence.</p>
+                    <ul class="onboarding-features">
+                        <li><i class="ph-bold ph-check"></i> Enregistre tes notes par matière avec leurs coefficients</li>
+                        <li><i class="ph-bold ph-check"></i> Calcul automatique de la moyenne générale et graphiques</li>
+                        <li><i class="ph-bold ph-check"></i> Fixe un objectif de moyenne pour rester motivé</li>
+                    </ul>
+                </div>
+
+                <!-- Slide 5 : Dashboard & Fin -->
+                <div class="onboarding-slide" data-step="5">
+                    <div class="onboarding-icon-wrap glow-rocket">
+                        <i class="ph-duotone ph-rocket-launch"></i>
+                    </div>
+                    <h2>C'est parti !</h2>
+                    <p class="onboarding-subtitle">Tout est configuré pour ta réussite.</p>
+                    <p class="onboarding-desc">Tu peux modifier ton prénom et réafficher ce tutoriel à tout moment depuis l'onglet <b>Paramètres</b>.</p>
+                </div>
+            </div>
+
+            <!-- Footer controls -->
+            <div class="onboarding-footer">
+                <button type="button" class="btn btn-secondary" id="btn-prev-onboarding" style="visibility: hidden;">
+                    <i class="ph ph-arrow-left"></i> Précédent
+                </button>
+                <button type="button" class="btn btn-primary" id="btn-next-onboarding">
+                    Suivant <i class="ph ph-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- ==================== APP WRAPPER ==================== -->
     <div class="app-wrapper">
 
@@ -423,6 +535,16 @@
                                     <i class="ph ph-calendar-arrow-down" aria-hidden="true"></i> Importer ICS
                                 </button>
                                 <input type="file" id="in-import-ics-file" accept=".ics" style="display: none;">
+                            </div>
+                        </div>
+
+                        <div class="settings-card">
+                            <h3><i class="ph ph-question" aria-hidden="true"></i> Aide & Tutoriel</h3>
+                            <p class="settings-desc">Découvre ou revois la présentation des fonctionnalités de l'application.</p>
+                            <div class="settings-actions">
+                                <button class="btn btn-secondary" id="btn-replay-tutorial">
+                                    <i class="ph ph-play-circle" aria-hidden="true"></i> Revoir le tutoriel
+                                </button>
                             </div>
                         </div>
 

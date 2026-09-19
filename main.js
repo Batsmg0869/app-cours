@@ -99,6 +99,7 @@ ipcMain.handle('load-data', () => {
             // Migration automatique
             if (!data.grades) data.grades = [];
             if (!data.archives) data.archives = [];
+            if (data.onboardingDone === undefined) data.onboardingDone = false;
             if (!data.settings) data.settings = { customTheme: { primary: '#818cf8', accent: '#c084fc', bg: '#020617', card: '#1e293b' } };
             return data;
         }
