@@ -535,6 +535,14 @@ function startOnboarding(fromStep = 0) {
   if (!overlay) return;
   overlay.style.display = 'flex';
   overlay.classList.remove('is-hiding');
+  
+  // Masquer le splash screen immédiatement lors du premier lancement
+  const splash = document.getElementById('splash-screen');
+  if (splash) {
+    splash.classList.add('splash-hidden');
+    splash.style.display = 'none';
+  }
+  
   _renderOnboardingStep(false);
 
   // Focus auto sur le champ prénom si slide 0
