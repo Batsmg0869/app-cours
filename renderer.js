@@ -382,11 +382,6 @@ window.addEventListener('DOMContentLoaded', async () => {
 
   await loadData();
 
-  // Déclencher l'onboarding au premier lancement
-  if (!_onboardingDone) {
-    startOnboarding(0);
-  }
-
   console.log("[Initialisation] Rendu initial de l'interface utilisateur...");
   renderTasks();
   renderCourses();
@@ -465,6 +460,11 @@ window.addEventListener('load', () => {
     if (splash) {
       splash.classList.add('splash-hidden');
       console.log("[Splash] Écran de démarrage masqué.");
+      
+      // Déclencher l'onboarding au premier lancement après le splash screen
+      if (!_onboardingDone) {
+        startOnboarding(0);
+      }
     }
   }, 5000);
 });
@@ -535,13 +535,6 @@ function startOnboarding(fromStep = 0) {
   if (!overlay) return;
   overlay.style.display = 'flex';
   overlay.classList.remove('is-hiding');
-  
-  // Masquer le splash screen immédiatement lors du premier lancement
-  const splash = document.getElementById('splash-screen');
-  if (splash) {
-    splash.classList.add('splash-hidden');
-    splash.style.display = 'none';
-  }
   
   _renderOnboardingStep(false);
 
