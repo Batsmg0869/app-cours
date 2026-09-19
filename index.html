@@ -145,13 +145,14 @@
                         <i class="ph-duotone ph-rocket-launch"></i>
                     </div>
                     <h2>C'est parti !</h2>
-                    <p class="onboarding-subtitle">Tout est configuré pour ta réussite.</p>
-                    <ul class="onboarding-features" style="margin-bottom: var(--space-md);">
-                        <li><i class="ph-bold ph-arrows-clockwise" style="color: var(--accent);"></i> <b>Mises à jour simplifiées (en dev) :</b> On essaie d'ajouter un système pour mettre à jour l'application sans installateur manuel, il suffira juste d'appuyer sur un bouton !</li>
-                        <li><i class="ph-bold ph-users-three" style="color: var(--warning);"></i> <b>Système d'amis (en dev) :</b> On travaille également sur l'ajout d'un système d'amis pour s'entraider et échanger !</li>
-                    </ul>
+                    <p class="onboarding-subtitle">Tout est configuré pour ta réussite au quotidien.</p>
                     <p class="onboarding-desc">Tu peux modifier ton prénom et réafficher ce tutoriel à tout moment
                         depuis l'onglet <b>Paramètres</b>.</p>
+                    <div style="margin-top: 18px;">
+                        <button type="button" class="btn btn-secondary btn-sm" id="btn-onboarding-changelog">
+                            <i class="ph-bold ph-sparkle"></i> Découvrir les nouveautés & fonctions à venir (Update Log)
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -176,7 +177,7 @@
                 <div class="logo-box" aria-hidden="true"><i class="ph-bold ph-student"></i></div>
                 <div class="sidebar-brand">
                     <h2>Planner</h2>
-                    <span class="sidebar-version">v2.2</span>
+                    <span class="sidebar-version clickable" id="sidebar-version-tag" title="Voir le Journal des nouveautés (Update Log)">v2.3.0 <i class="ph-bold ph-sparkle"></i></span>
                 </div>
             </div>
 
@@ -574,8 +575,18 @@
                         </div>
 
                         <div class="settings-card">
+                            <h3><i class="ph ph-sparkle" aria-hidden="true"></i> Mises à jour & Nouveautés</h3>
+                            <p class="settings-desc">Découvre les dernières fonctionnalités ajoutées et celles en cours de développement.</p>
+                            <div class="settings-actions">
+                                <button class="btn btn-secondary" id="btn-open-update-log">
+                                    <i class="ph ph-list-bullets" aria-hidden="true"></i> Journal des nouveautés (Update Log)
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="settings-card">
                             <h3><i class="ph ph-info" aria-hidden="true"></i> À propos</h3>
-                            <p class="settings-desc">HomeworkPlanner <strong>v2.2.2</strong> — Construit avec
+                            <p class="settings-desc">HomeworkPlanner <strong>v2.3.0</strong> — Construit avec
                                 Electron.<br>Développé par <strong>Baptiste Lecuyot</strong> (Batsmg0869).</p>
                         </div>
                     </div>
@@ -806,6 +817,131 @@
                 <button id="btn-close-pdf" class="btn-icon" aria-label="Fermer"><i class="ph ph-x"></i></button>
             </div>
             <div id="pdf-viewer" class="pdf-viewer" role="document"></div>
+        </div>
+    </div>
+
+    <!-- Modal Journal des nouveautés (Update Log) -->
+    <div id="modal-update-log" class="modal" role="dialog" aria-modal="true" aria-labelledby="update-log-title">
+        <div class="update-log-dialog">
+            <div class="update-log-header">
+                <div class="update-log-header-left">
+                    <div class="update-log-icon">
+                        <i class="ph-duotone ph-sparkle"></i>
+                    </div>
+                    <div>
+                        <div class="update-log-badge-wrap">
+                            <h3 id="update-log-title">Journal des nouveautés</h3>
+                            <span class="update-log-version-pill">v2.3.0</span>
+                        </div>
+                        <p class="update-log-subtitle">Nouvelles fonctionnalités & projets en cours de développement</p>
+                    </div>
+                </div>
+                <button type="button" class="btn-icon" id="btn-close-update-log" aria-label="Fermer"><i class="ph ph-x"></i></button>
+            </div>
+
+            <div class="update-log-body">
+                <!-- Section En cours de développement -->
+                <div class="update-log-section section-wip">
+                    <div class="update-log-section-header">
+                        <span class="update-tag tag-wip"><i class="ph-bold ph-hourglass-high"></i> En cours de développement</span>
+                        <span class="update-tag-hint">Prochainement</span>
+                    </div>
+                    <div class="update-items-list">
+                        <div class="update-item wip">
+                            <div class="update-item-icon color-update">
+                                <i class="ph-bold ph-arrows-clockwise"></i>
+                            </div>
+                            <div class="update-item-content">
+                                <h4>Mises à jour en 1 clic (sans installateur manuel)</h4>
+                                <p>Un nouveau système permettra de mettre à jour directement l'application depuis les paramètres en appuyant simplement sur un bouton, sans avoir besoin de retélécharger l'installateur.</p>
+                            </div>
+                        </div>
+
+                        <div class="update-item wip">
+                            <div class="update-item-icon color-friends">
+                                <i class="ph-bold ph-users-three"></i>
+                            </div>
+                            <div class="update-item-content">
+                                <h4>Système d'amis & entraide</h4>
+                                <p>Fonctionnalité sociale pour ajouter tes amis, partager tes devoirs, t'entraider sur les révisions et comparer vos cours facilement.</p>
+                            </div>
+                        </div>
+
+                        <div class="update-item wip">
+                            <div class="update-item-icon color-ics">
+                                <i class="ph-bold ph-calendar-blank"></i>
+                            </div>
+                            <div class="update-item-content">
+                                <h4>Importation automatique d'emplois du temps Pronote / EcoleDirecte</h4>
+                                <p>Synchronisation directe de ton planning scolaire via fichier ou lien ICS. <em>(Merci de ne pas y toucher pour le moment !)</em></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section Version 2.3.0 (Actuelle) -->
+                <div class="update-log-section section-current">
+                    <div class="update-log-section-header">
+                        <span class="update-tag tag-current"><i class="ph-bold ph-check-circle"></i> Version 2.3.0 — Nouveautés</span>
+                        <span class="update-tag-hint">Version installée</span>
+                    </div>
+                    <div class="update-items-list">
+                        <div class="update-item">
+                            <div class="update-item-icon color-online">
+                                <i class="ph-bold ph-wifi-high"></i>
+                            </div>
+                            <div class="update-item-content">
+                                <h4>Indicateur de connexion En ligne / Hors ligne</h4>
+                                <p>Détection en temps réel de votre connexion Internet dans la barre latérale. La pastille passe en vert pulsant lorsque vous êtes connecté, et en rouge fixe en mode hors-ligne.</p>
+                            </div>
+                        </div>
+
+                        <div class="update-item">
+                            <div class="update-item-icon color-tutorial">
+                                <i class="ph-bold ph-graduation-cap"></i>
+                            </div>
+                            <div class="update-item-content">
+                                <h4>Tutoriel interactif & Personnalisation du prénom</h4>
+                                <p>Guide d'accueil animé et interactif lors du tout premier démarrage de l'application pour saisir ton prénom et découvrir toutes les fonctionnalités.</p>
+                            </div>
+                        </div>
+
+                        <div class="update-item">
+                            <div class="update-item-icon color-replay">
+                                <i class="ph-bold ph-arrow-counter-clockwise"></i>
+                            </div>
+                            <div class="update-item-content">
+                                <h4>Bouton « Revoir le tutoriel »</h4>
+                                <p>Tu peux maintenant relancer la visite guidée à n'importe quel moment depuis les <b>Paramètres</b>.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section Historique v2.2 -->
+                <div class="update-log-section section-past">
+                    <div class="update-log-section-header">
+                        <span class="update-tag tag-past"><i class="ph-bold ph-archive"></i> Versions antérieures (v2.2)</span>
+                    </div>
+                    <div class="update-items-list">
+                        <div class="update-item past">
+                            <div class="update-item-icon color-theme">
+                                <i class="ph-bold ph-paint-brush"></i>
+                            </div>
+                            <div class="update-item-content">
+                                <h4>Personnalisation de thèmes & Police Minecraft</h4>
+                                <p>Support complet des thèmes sombres/lumineux, couleurs d'accentuation sur-mesure et typographie Minecraft.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="update-log-footer">
+                <button type="button" class="btn btn-primary" id="btn-ack-update-log">
+                    <i class="ph-bold ph-check"></i> Compris !
+                </button>
+            </div>
         </div>
     </div>
 

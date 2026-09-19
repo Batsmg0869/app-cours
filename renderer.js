@@ -419,6 +419,20 @@ window.addEventListener('DOMContentLoaded', async () => {
   const btnReplay = document.getElementById('btn-replay-tutorial');
   if (btnReplay) btnReplay.addEventListener('click', () => startOnboarding(1)); // commence à slide 1 (slide prénom déjà faite)
 
+  // Journal des nouveautés (Update Log)
+  const updateLogModal = document.getElementById('modal-update-log');
+  const btnOpenUpdateLog = document.getElementById('btn-open-update-log');
+  const sidebarVersionTag = document.getElementById('sidebar-version-tag');
+  const btnOnboardingChangelog = document.getElementById('btn-onboarding-changelog');
+  const btnCloseUpdateLog = document.getElementById('btn-close-update-log');
+  const btnAckUpdateLog = document.getElementById('btn-ack-update-log');
+
+  if (btnOpenUpdateLog) btnOpenUpdateLog.onclick = () => openModal(updateLogModal);
+  if (sidebarVersionTag) sidebarVersionTag.onclick = () => openModal(updateLogModal);
+  if (btnOnboardingChangelog) btnOnboardingChangelog.onclick = () => openModal(updateLogModal);
+  if (btnCloseUpdateLog) btnCloseUpdateLog.onclick = () => closeModal(updateLogModal);
+  if (btnAckUpdateLog) btnAckUpdateLog.onclick = () => closeModal(updateLogModal);
+
   // Setup new UI listeners
   const btnQuickAdd = document.getElementById('btn-quick-add');
   if (btnQuickAdd) btnQuickAdd.onclick = () => document.getElementById('btn-add-task').click();
