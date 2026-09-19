@@ -580,6 +580,13 @@ a {
     background: var(--success);
     flex-shrink: 0;
     animation: statusPulse 2.5s ease-in-out infinite;
+    transition: background-color 0.3s ease;
+}
+
+.status-dot.offline {
+    background: var(--urgent, #ef4444);
+    animation: none;
+    box-shadow: 0 0 6px rgba(239, 68, 68, 0.4);
 }
 
 /* =====================================================

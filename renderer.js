@@ -375,6 +375,31 @@ function loadMinecraftFont() {
   document.body.style.fontFamily = 'var(--font-base)';
 }
 
+// Gestion du statut en ligne / hors ligne
+function setupNetworkStatusWatcher() {
+  const dot = document.getElementById('user-status-dot');
+  const text = document.getElementById('user-status-text');
+
+  function updateStatus() {
+    const isOnline = navigator.onLine;
+    if (dot) {
+      if (isOnline) {
+        dot.classList.remove('offline');
+      } else {
+        dot.classList.add('offline');
+      }
+    }
+    if (text) {
+      text.textContent = isOnline ? 'En ligne' : 'Hors ligne';
+    }
+    console.log(`[Réseau] Statut de connexion : ${isOnline ? 'En ligne' : 'Hors ligne'}`);
+  }
+
+  window.addEventListener('online', updateStatus);
+  window.addEventListener('offline', updateStatus);
+  updateStatus();
+}
+
 // INITIALISATION
 window.addEventListener('DOMContentLoaded', async () => {
   console.log("[Initialisation] Lancement de l'application HomeworkPlanner...");
@@ -388,6 +413,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   renderSchedule();
   updateStats();
   setupWeekToggles();
+  setupNetworkStatusWatcher();
 
   // Bouton "Revoir le tutoriel" dans Paramètres
   const btnReplay = document.getElementById('btn-replay-tutorial');
