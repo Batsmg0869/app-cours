@@ -12,3 +12,10 @@ contextBridge.exposeInMainWorld('storage', {
     openAttachment: (path) => ipcRenderer.invoke('open-attachment', path),
     exportICS: (events) => ipcRenderer.invoke('export-ics', events)
 });
+
+contextBridge.exposeInMainWorld('updater', {
+    checkForUpdates: () => ipcRenderer.send('check-for-updates'),
+    installUpdate: () => ipcRenderer.send('install-update'),
+    onUpdateStatus: (callback) => ipcRenderer.on('update-status', (_, message) => callback(message)),
+    onUpdateDownloaded: (callback) => ipcRenderer.on('update-downloaded', (_, releaseName) => callback(releaseName))
+});

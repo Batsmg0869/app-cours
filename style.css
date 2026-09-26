@@ -230,6 +230,12 @@ a {
     transition: var(--transition);
 }
 
+/* Fix text blurriness during hover/transforms on Chrome/Electron */
+.card, .stat-card, .task-card, .grade-card, .course-card, .course-item-card, .settings-card, .quick-action-card, .btn, .nav-item {
+    backface-visibility: hidden;
+    -webkit-font-smoothing: subpixel-antialiased;
+}
+
 /* =====================================================
    SCROLLBAR
    ===================================================== */
@@ -782,7 +788,7 @@ a {
 }
 
 .btn-primary:hover {
-    transform: translateY(-2px) scale(1.01);
+    transform: translateY(-2px);
     box-shadow: var(--shadow-glow), 0 4px 20px rgba(99, 102, 241, 0.3);
 }
 
@@ -1058,7 +1064,7 @@ a {
 }
 
 .stat-card:hover {
-    transform: translateY(-5px) scale(1.01);
+    transform: translateY(-4px);
     box-shadow: var(--shadow-glow);
 }
 
@@ -1340,7 +1346,7 @@ a {
 
 .task-card:hover {
     border-color: var(--text-muted);
-    transform: translateY(-5px) scale(1.01);
+    transform: translateY(-4px);
     box-shadow: var(--shadow-glow);
 }
 
@@ -1719,7 +1725,7 @@ a {
 
 .course-item-card:hover {
     border-color: var(--primary);
-    transform: translateY(-5px) scale(1.01);
+    transform: translateY(-4px);
     box-shadow: var(--shadow-glow);
 }
 
@@ -1837,7 +1843,7 @@ a {
 }
 
 .course-card:hover {
-    transform: translateY(-4px) scale(1.02);
+    transform: translateY(-4px);
     box-shadow: var(--shadow-glow);
     border-color: var(--primary);
 }
@@ -2062,7 +2068,7 @@ a {
 
 .grade-card:hover {
     border-color: var(--primary);
-    transform: translateY(-3px) scale(1.01);
+    transform: translateY(-3px);
     box-shadow: var(--shadow-glow);
 }
 
@@ -2154,7 +2160,7 @@ a {
 
 .settings-card:hover {
     border-color: var(--primary);
-    transform: translateY(-3px) scale(1.005);
+    transform: translateY(-3px);
     box-shadow: var(--shadow-glow);
 }
 

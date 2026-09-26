@@ -177,7 +177,7 @@
                 <div class="logo-box" aria-hidden="true"><i class="ph-bold ph-student"></i></div>
                 <div class="sidebar-brand">
                     <h2>Planner</h2>
-                    <span class="sidebar-version clickable" id="sidebar-version-tag" title="Voir le Journal des nouveautés (Update Log)">v2.3.0 <i class="ph-bold ph-sparkle"></i></span>
+                    <span class="sidebar-version clickable" id="sidebar-version-tag" title="Voir le Journal des nouveautés (Update Log)">v2.3.5 <i class="ph-bold ph-sparkle"></i></span>
                 </div>
             </div>
 
@@ -259,7 +259,7 @@
             <div class="scrollable-content">
 
                 <!-- ========== PAGE : ACCUEIL ========== -->
-                <section id="page-home" class="content-section" aria-labelledby="home-title">
+                <section id="page-home" class="content-section is-active" style="display: block;" aria-labelledby="home-title">
                     <div class="hero-section">
                         <div class="hero-text">
                             <p class="hero-greeting">Bonjour,</p>
@@ -576,17 +576,43 @@
 
                         <div class="settings-card">
                             <h3><i class="ph ph-sparkle" aria-hidden="true"></i> Mises à jour & Nouveautés</h3>
-                            <p class="settings-desc">Découvre les dernières fonctionnalités ajoutées et celles en cours de développement.</p>
-                            <div class="settings-actions">
-                                <button class="btn btn-secondary" id="btn-open-update-log">
-                                    <i class="ph ph-list-bullets" aria-hidden="true"></i> Journal des nouveautés (Update Log)
+                            <p class="settings-desc">Recherchez les mises à jour logicielles, choisissez une version spécifique ou consultez le journal des nouveautés.</p>
+                            <div class="settings-actions" style="flex-wrap: wrap; gap: 8px;">
+                                <button class="btn btn-primary" id="btn-check-updates">
+                                    <i class="ph ph-arrows-clockwise" aria-hidden="true"></i> Rechercher la dernière version
                                 </button>
+                                <button class="btn btn-secondary" id="btn-open-version-picker">
+                                    <i class="ph ph-git-branch" aria-hidden="true"></i> Choisir une version
+                                </button>
+                                <button class="btn btn-secondary" id="btn-open-update-log">
+                                    <i class="ph ph-list-bullets" aria-hidden="true"></i> Journal des nouveautés
+                                </button>
+                            </div>
+                            <div id="update-status-msg" style="margin-top: 10px; font-size: 0.85rem; color: var(--text-muted); display: none;"></div>
+                            <button class="btn btn-primary" id="btn-install-update" style="display: none; margin-top: 10px;">
+                                <i class="ph ph-download" aria-hidden="true"></i> Installer et redémarrer
+                            </button>
+
+                            <!-- Sélecteur de version spécifique -->
+                            <div id="version-picker-box" style="display: none; margin-top: 15px; padding: 12px; background: rgba(255,255,255,0.05); border-radius: 8px; border: 1px solid var(--border-color);">
+                                <label for="select-version" style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 6px;">
+                                    <i class="ph ph-cloud-arrow-down" aria-hidden="true"></i> Versions disponibles sur GitHub :
+                                </label>
+                                <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                                    <select id="select-version" class="input-select" style="flex: 1; min-width: 200px; padding: 6px 10px; background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-color); border-radius: 6px;">
+                                        <option value="">Chargement des versions...</option>
+                                    </select>
+                                    <button type="button" class="btn btn-primary btn-sm" id="btn-download-selected-version" disabled>
+                                        <i class="ph ph-download-simple" aria-hidden="true"></i> Obtenir cette version
+                                    </button>
+                                </div>
+                                <div id="selected-version-info" style="margin-top: 8px; font-size: 0.8rem; color: var(--text-muted); display: none;"></div>
                             </div>
                         </div>
 
                         <div class="settings-card">
                             <h3><i class="ph ph-info" aria-hidden="true"></i> À propos</h3>
-                            <p class="settings-desc">HomeworkPlanner <strong>v2.3.0</strong> — Construit avec
+                            <p class="settings-desc">HomeworkPlanner <strong>v2.3.5</strong> — Construit avec
                                 Electron.<br>Développé par <strong>Baptiste Lecuyot</strong> (Batsmg0869).</p>
                         </div>
                     </div>
@@ -831,7 +857,7 @@
                     <div>
                         <div class="update-log-badge-wrap">
                             <h3 id="update-log-title">Journal des nouveautés</h3>
-                            <span class="update-log-version-pill">v2.3.0</span>
+                            <span class="update-log-version-pill">v2.3.5</span>
                         </div>
                         <p class="update-log-subtitle">Nouvelles fonctionnalités & projets en cours de développement</p>
                     </div>
@@ -848,22 +874,12 @@
                     </div>
                     <div class="update-items-list">
                         <div class="update-item wip">
-                            <div class="update-item-icon color-update">
-                                <i class="ph-bold ph-arrows-clockwise"></i>
-                            </div>
-                            <div class="update-item-content">
-                                <h4>Mises à jour en 1 clic (sans installateur manuel)</h4>
-                                <p>Un nouveau système permettra de mettre à jour directement l'application depuis les paramètres en appuyant simplement sur un bouton, sans avoir besoin de retélécharger l'installateur.</p>
-                            </div>
-                        </div>
-
-                        <div class="update-item wip">
                             <div class="update-item-icon color-friends">
                                 <i class="ph-bold ph-users-three"></i>
                             </div>
                             <div class="update-item-content">
                                 <h4>Système d'amis & entraide</h4>
-                                <p>Fonctionnalité sociale pour ajouter tes amis, partager tes devoirs, t'entraider sur les révisions et comparer vos cours facilement.</p>
+                                <p>Fonctionnalité sociale pour ajouter tes camarades, partager tes devoirs, t'entraider sur les révisions et comparer vos cours facilement.</p>
                             </div>
                         </div>
 
@@ -873,26 +889,36 @@
                             </div>
                             <div class="update-item-content">
                                 <h4>Importation automatique d'emplois du temps Pronote / EcoleDirecte</h4>
-                                <p>Synchronisation directe de ton planning scolaire via fichier ou lien ICS. <em>(Merci de ne pas y toucher pour le moment !)</em></p>
+                                <p>Synchronisation directe de ton planning scolaire via fichier ou lien ICS. <em>(Fonctionnalité en cours de conception — Ne pas y toucher pour le moment !)</em></p>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Section Version 2.3.0 (Actuelle) -->
+                <!-- Section Version 2.3.5 (Actuelle) -->
                 <div class="update-log-section section-current">
                     <div class="update-log-section-header">
-                        <span class="update-tag tag-current"><i class="ph-bold ph-check-circle"></i> Version 2.3.0 — Nouveautés</span>
+                        <span class="update-tag tag-current"><i class="ph-bold ph-check-circle"></i> Version 2.3.5 — Nouveautés</span>
                         <span class="update-tag-hint">Version installée</span>
                     </div>
                     <div class="update-items-list">
+                        <div class="update-item">
+                            <div class="update-item-icon color-update">
+                                <i class="ph-bold ph-arrows-clockwise"></i>
+                            </div>
+                            <div class="update-item-content">
+                                <h4>Mises à jour automatiques en 1 clic & Sélecteur de version</h4>
+                                <p>Plus besoin de retélécharger un installateur manuel ! L'application recherche les mises à jour en fond, les télécharge et s'installe d'un simple clic. Un sélecteur permet aussi de choisir et basculer sur une version spécifique depuis GitHub.</p>
+                            </div>
+                        </div>
+
                         <div class="update-item">
                             <div class="update-item-icon color-online">
                                 <i class="ph-bold ph-wifi-high"></i>
                             </div>
                             <div class="update-item-content">
                                 <h4>Indicateur de connexion En ligne / Hors ligne</h4>
-                                <p>Détection en temps réel de votre connexion Internet dans la barre latérale. La pastille passe en vert pulsant lorsque vous êtes connecté, et en rouge fixe en mode hors-ligne.</p>
+                                <p>Détection en temps réel de votre connexion Internet dans la barre latérale. La pastille passe en vert pulsant en ligne et en rouge hors-ligne, avec blocage intelligent des requêtes impossibles sans réseau.</p>
                             </div>
                         </div>
 
@@ -902,7 +928,7 @@
                             </div>
                             <div class="update-item-content">
                                 <h4>Tutoriel interactif & Personnalisation du prénom</h4>
-                                <p>Guide d'accueil animé et interactif lors du tout premier démarrage de l'application pour saisir ton prénom et découvrir toutes les fonctionnalités.</p>
+                                <p>Guide d'accueil animé et interactif lors du tout premier démarrage de l'application pour saisir ton prénom et découvrir toutes les fonctionnalités clés.</p>
                             </div>
                         </div>
 
@@ -912,7 +938,17 @@
                             </div>
                             <div class="update-item-content">
                                 <h4>Bouton « Revoir le tutoriel »</h4>
-                                <p>Tu peux maintenant relancer la visite guidée à n'importe quel moment depuis les <b>Paramètres</b>.</p>
+                                <p>Tu peux relancer la visite guidée à n'importe quel moment depuis les <b>Paramètres</b> en un clic.</p>
+                            </div>
+                        </div>
+
+                        <div class="update-item">
+                            <div class="update-item-icon color-theme">
+                                <i class="ph-bold ph-sparkle"></i>
+                            </div>
+                            <div class="update-item-content">
+                                <h4>Affichage instantané de l'Accueil & Netteté du texte</h4>
+                                <p>Ouverture immédiate sur l'Accueil complet au lancement de l'application, et correction du flou de police au survol des cartes et rectangles.</p>
                             </div>
                         </div>
                     </div>

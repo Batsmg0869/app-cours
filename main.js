@@ -1,8 +1,54 @@
-const { app, BrowserWindow, ipcMain, Notification, Tray, Menu, shell, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, Notification, Tray, Menu, shell, dialog, autoUpdater } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { spawn } = require('child_process');
 const ics = require('ics');
+
+function setupUpdater(win) {
+    if (!app.isPackaged) return; // Uniquement en prod
+
+    const server = 'https://update.electronjs.org';
+    const feed = `${server}/Batsmg0869/app-cours/${process.platform}-${process.arch}/${app.getVersion()}`;
+
+    try {
+        autoUpdater.setFeedURL({ url: feed });
+    } catch (e) {
+        console.error('Erreur setFeedURL:', e);
+    }
+
+    autoUpdater.on('update-available', () => {
+        if (win) win.webContents.send('update-status', 'Mise à jour trouvée. Téléchargement en cours...');
+    });
+
+    autoUpdater.on('update-downloaded', (event, releaseNotes, releaseName) => {
+        if (win) win.webContents.send('update-downloaded', releaseName);
+    });
+
+    autoUpdater.on('error', (err) => {
+        const errMsg = err && err.message ? err.message : String(err);
+        if (win) win.webContents.send('update-status', `Erreur lors de la recherche : ${errMsg}`);
+        console.error('Erreur mise à jour:', err);
+    });
+
+    autoUpdater.on('update-not-available', () => {
+        if (win) win.webContents.send('update-status', 'Vous êtes déjà à la dernière version.');
+    });
+}
+
+ipcMain.on('check-for-updates', (event) => {
+    if (!app.isPackaged) {
+        if (win) win.webContents.send('update-status', 'Les mises à jour sont désactivées en mode développement.');
+        return;
+    }
+    if (win) win.webContents.send('update-status', 'Recherche de mise à jour...');
+    autoUpdater.checkForUpdates();
+});
+
+ipcMain.on('install-update', () => {
+    if (app.isPackaged) {
+        autoUpdater.quitAndInstall();
+    }
+});
 
 let win;
 let tray;
@@ -32,6 +78,8 @@ function createWindow() {
         }
         return false;
     });
+    
+    setupUpdater(win);
 }
 
 // Fonction de notification

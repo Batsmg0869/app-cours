@@ -1,6 +1,6 @@
 {
   "name": "homework-planner",
-  "version": "2.3.0",
+  "version": "2.3.5",
   "description": "Application de gestion de devoirs pour les étudiants.",
   "main": "main.js",
   "author": "Batsmg0869",
@@ -28,6 +28,7 @@
     "chart.js": "^4.5.1",
     "ical.js": "^2.2.1",
     "ics": "^3.12.0",
-    "pdfjs-dist": "^5.4.624"
+    "pdfjs-dist": "^5.4.624",
+    "update-electron-app": "^3.3.0"
   }
 }

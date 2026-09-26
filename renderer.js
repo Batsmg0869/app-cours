@@ -414,6 +414,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   updateStats();
   setupWeekToggles();
   setupNetworkStatusWatcher();
+  switchSection('page-home');
 
   // Bouton "Revoir le tutoriel" dans Paramètres
   const btnReplay = document.getElementById('btn-replay-tutorial');
@@ -432,6 +433,146 @@ window.addEventListener('DOMContentLoaded', async () => {
   if (btnOnboardingChangelog) btnOnboardingChangelog.onclick = () => openModal(updateLogModal);
   if (btnCloseUpdateLog) btnCloseUpdateLog.onclick = () => closeModal(updateLogModal);
   if (btnAckUpdateLog) btnAckUpdateLog.onclick = () => closeModal(updateLogModal);
+
+  // --- Auto-Updater setup ---
+  const btnCheckUpdates = document.getElementById('btn-check-updates');
+  const btnInstallUpdate = document.getElementById('btn-install-update');
+  const updateStatusMsg = document.getElementById('update-status-msg');
+
+  if (btnCheckUpdates && window.updater) {
+      btnCheckUpdates.onclick = () => {
+          updateStatusMsg.style.display = 'block';
+          updateStatusMsg.style.color = 'var(--text-muted)';
+          
+          if (!navigator.onLine) {
+              updateStatusMsg.style.color = '#ff4d4d';
+              updateStatusMsg.innerHTML = `<i class="ph ph-wifi-slash" aria-hidden="true"></i> Pas de connexion Internet. Impossible de vérifier les mises à jour.`;
+              return;
+          }
+
+          updateStatusMsg.innerHTML = `<i class="ph ph-arrows-clockwise" aria-hidden="true"></i> Recherche de mises à jour...`;
+          btnCheckUpdates.disabled = true;
+          window.updater.checkForUpdates();
+      };
+  }
+
+  if (btnInstallUpdate && window.updater) {
+      btnInstallUpdate.onclick = () => {
+          window.updater.installUpdate();
+      };
+  }
+
+  if (window.updater) {
+      window.updater.onUpdateStatus((statusText) => {
+          if (updateStatusMsg) {
+              updateStatusMsg.style.display = 'block';
+              
+              const isError = statusText.toLowerCase().includes('erreur') || statusText.toLowerCase().includes('impossible');
+              const isSuccess = statusText.includes('dernière version');
+
+              if (isError) {
+                  updateStatusMsg.style.color = '#ff4d4d';
+                  updateStatusMsg.innerHTML = `<i class="ph ph-warning-circle" aria-hidden="true"></i> ${statusText}`;
+              } else if (isSuccess) {
+                  updateStatusMsg.style.color = '#2ed573';
+                  updateStatusMsg.innerHTML = `<i class="ph ph-check-circle" aria-hidden="true"></i> ${statusText}`;
+              } else {
+                  updateStatusMsg.style.color = 'var(--text-muted)';
+                  updateStatusMsg.textContent = statusText;
+              }
+          }
+          // Réactiver le bouton de recherche si terminé ou en cas d'erreur
+          if (btnCheckUpdates && (statusText.includes('dernière version') || statusText.toLowerCase().includes('erreur') || statusText.includes('désactivées'))) {
+              btnCheckUpdates.disabled = false;
+          }
+      });
+
+      window.updater.onUpdateDownloaded((releaseName) => {
+          if (updateStatusMsg) {
+              updateStatusMsg.style.display = 'block';
+              updateStatusMsg.style.color = '#2ed573';
+              updateStatusMsg.innerHTML = `<i class="ph ph-sparkle" aria-hidden="true"></i> Mise à jour prête : <b>${releaseName}</b>.`;
+          }
+          if (btnInstallUpdate) {
+              btnInstallUpdate.style.display = 'inline-block';
+          }
+          if (btnCheckUpdates) {
+              btnCheckUpdates.style.display = 'none';
+          }
+      });
+  }
+
+  // --- Sélecteur de version spécifique ---
+  const btnOpenVersionPicker = document.getElementById('btn-open-version-picker');
+  const versionPickerBox = document.getElementById('version-picker-box');
+  const selectVersion = document.getElementById('select-version');
+  const btnDownloadSelectedVersion = document.getElementById('btn-download-selected-version');
+  const selectedVersionInfo = document.getElementById('selected-version-info');
+  let availableReleases = [];
+
+  if (btnOpenVersionPicker && versionPickerBox) {
+      btnOpenVersionPicker.onclick = async () => {
+          const isHidden = versionPickerBox.style.display === 'none';
+          versionPickerBox.style.display = isHidden ? 'block' : 'none';
+
+          if (isHidden && availableReleases.length === 0) {
+              selectVersion.innerHTML = '<option value="">Chargement depuis GitHub...</option>';
+              btnDownloadSelectedVersion.disabled = true;
+
+              try {
+                  const res = await fetch('https://api.github.com/repos/Batsmg0869/app-cours/releases');
+                  if (!res.ok) throw new Error('Impossible de contacter GitHub');
+                  
+                  availableReleases = await res.json();
+
+                  if (!Array.isArray(availableReleases) || availableReleases.length === 0) {
+                      selectVersion.innerHTML = '<option value="">Aucune version disponible sur GitHub</option>';
+                      return;
+                  }
+
+                  selectVersion.innerHTML = '<option value="">-- Sélectionnez une version --</option>';
+                  availableReleases.forEach((rel) => {
+                      const opt = document.createElement('option');
+                      opt.value = rel.id;
+                      opt.textContent = `${rel.name || rel.tag_name} (${new Date(rel.published_at).toLocaleDateString('fr-FR')})`;
+                      selectVersion.appendChild(opt);
+                  });
+              } catch (err) {
+                  selectVersion.innerHTML = '<option value="">Erreur de chargement des versions</option>';
+                  if (selectedVersionInfo) {
+                      selectedVersionInfo.style.display = 'block';
+                      selectedVersionInfo.style.color = '#ff4d4d';
+                      selectedVersionInfo.textContent = 'Erreur : Impossible d\'obtenir la liste des versions depuis GitHub.';
+                  }
+              }
+          }
+      };
+  }
+
+  if (selectVersion) {
+      selectVersion.onchange = () => {
+          const selectedId = selectVersion.value;
+          const rel = availableReleases.find(r => String(r.id) === String(selectedId));
+
+          if (rel) {
+              btnDownloadSelectedVersion.disabled = false;
+              if (selectedVersionInfo) {
+                  selectedVersionInfo.style.display = 'block';
+                  selectedVersionInfo.style.color = 'var(--text-muted)';
+                  const bodySnippet = rel.body ? rel.body.substring(0, 120) + '...' : 'Aucune description disponible.';
+                  selectedVersionInfo.innerHTML = `<strong>${rel.tag_name}</strong> — ${bodySnippet}`;
+              }
+              btnDownloadSelectedVersion.onclick = () => {
+                  const asset = rel.assets ? rel.assets.find(a => a.name.endsWith('.exe') || a.name.endsWith('.zip')) : null;
+                  const targetUrl = asset ? asset.browser_download_url : rel.html_url;
+                  window.open(targetUrl, '_blank');
+              };
+          } else {
+              btnDownloadSelectedVersion.disabled = true;
+              if (selectedVersionInfo) selectedVersionInfo.style.display = 'none';
+          }
+      };
+  }
 
   // Setup new UI listeners
   const btnQuickAdd = document.getElementById('btn-quick-add');
