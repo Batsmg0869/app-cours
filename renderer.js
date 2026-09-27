@@ -366,6 +366,7 @@ let appTheme = "default";
 let gradesList = [];
 let archiveList = [];
 let customTheme = { primary: '#818cf8', accent: '#c084fc', bg: '#020617', card: '#1e293b' };
+let highPriority = false;
 
 // La police Minecraft est définie directement dans style.css (base64).
 // Cette fonction applique simplement la variable CSS du thème.
@@ -673,6 +674,7 @@ async function loadData() {
     if (saved.settings && saved.settings.customTheme) {
       customTheme = saved.settings.customTheme;
     }
+    highPriority = saved.settings?.highPriority === true;
     console.log(`[Stockage] ${taskList.length} tâche(s) et ${courseList.length} cours chargés.`);
   } else {
     console.log("[Stockage] ℹ️ Aucune donnée utilisateur existante. Chargement des valeurs par défaut.");
@@ -697,7 +699,7 @@ async function saveData() {
     grades: gradesList,
     archives: archiveList,
     onboardingDone: _onboardingDone,
-    settings: { customTheme: customTheme }
+    settings: { customTheme: customTheme, highPriority: highPriority }
   });
   console.log("[Stockage] ✓ Sauvegarde réussie des tâches, cours et paramètres.");
 }
@@ -1736,7 +1738,24 @@ function downloadPDFFile(pdfPath) {
 function renderSettings() {
   document.getElementById('setting-username').value = userName;
   document.getElementById('setting-theme').value = appTheme;
+  const priorityCard = document.getElementById('windows-startup-settings');
+  const priorityButton = document.getElementById('btn-high-priority');
+  priorityCard.hidden = !window.storage.isWindows;
+  priorityButton.setAttribute('aria-pressed', String(highPriority));
+  priorityButton.innerHTML = `<i class="ph ph-gauge" aria-hidden="true"></i> ${highPriority ? 'Désactiver la priorité élevée' : 'Activer la priorité élevée'}`;
 }
+
+document.getElementById('btn-high-priority').addEventListener('click', async () => {
+  const nextValue = !highPriority;
+  const applied = await window.storage.setAppPriority(nextValue);
+  if (!applied) {
+    alert("Windows n'a pas pu modifier la priorité de l'application.");
+    return;
+  }
+  highPriority = nextValue;
+  renderSettings();
+  await saveData();
+});
 
 document.getElementById('setting-username').addEventListener('input', (e) => {
   userName = e.target.value;

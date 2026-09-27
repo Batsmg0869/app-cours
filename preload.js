@@ -1,8 +1,10 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('storage', {
+    isWindows: process.platform === 'win32',
     save: (data) => ipcRenderer.invoke('save-data', data),
     load: () => ipcRenderer.invoke('load-data'),
+    setAppPriority: (enabled) => ipcRenderer.invoke('set-app-priority', enabled),
     openPDF: (pdfPath) => ipcRenderer.invoke('open-pdf', pdfPath),
     loadPDF: (pdfPath) => ipcRenderer.invoke('load-pdf', pdfPath),
     downloadPDF: (pdfPath) => ipcRenderer.invoke('download-pdf', pdfPath),

@@ -177,7 +177,7 @@
                 <div class="logo-box" aria-hidden="true"><i class="ph-bold ph-student"></i></div>
                 <div class="sidebar-brand">
                     <h2>Planner</h2>
-                    <span class="sidebar-version clickable" id="sidebar-version-tag" title="Voir le Journal des nouveautés (Update Log)">v2.3.5 <i class="ph-bold ph-sparkle"></i></span>
+                    <span class="sidebar-version clickable" id="sidebar-version-tag" title="Voir le Journal des nouveautés (Update Log)">v2.4.0 <i class="ph-bold ph-sparkle"></i></span>
                 </div>
             </div>
 
@@ -507,6 +507,16 @@
                             </div>
                         </div>
 
+                        <div class="settings-card" id="windows-startup-settings">
+                            <h3><i class="ph ph-windows-logo" aria-hidden="true"></i> Démarrage Windows</h3>
+                            <p class="settings-desc">Lance l'application avec une priorité supérieure à la normale à chaque démarrage.</p>
+                            <div class="settings-actions">
+                                <button class="btn btn-secondary" id="btn-high-priority" type="button" aria-pressed="false">
+                                    <i class="ph ph-gauge" aria-hidden="true"></i> Activer la priorité élevée
+                                </button>
+                            </div>
+                        </div>
+
                         <div class="settings-card">
                             <h3><i class="ph ph-palette" aria-hidden="true"></i> Apparence</h3>
                             <div class="form-group">
@@ -612,7 +622,7 @@
 
                         <div class="settings-card">
                             <h3><i class="ph ph-info" aria-hidden="true"></i> À propos</h3>
-                            <p class="settings-desc">HomeworkPlanner <strong>v2.3.5</strong> — Construit avec
+                            <p class="settings-desc">HomeworkPlanner <strong>v2.4.0</strong> — Construit avec
                                 Electron.<br>Développé par <strong>Baptiste Lecuyot</strong> (Batsmg0869).</p>
                         </div>
                     </div>
@@ -857,7 +867,7 @@
                     <div>
                         <div class="update-log-badge-wrap">
                             <h3 id="update-log-title">Journal des nouveautés</h3>
-                            <span class="update-log-version-pill">v2.3.5</span>
+                            <span class="update-log-version-pill">v2.4.0</span>
                         </div>
                         <p class="update-log-subtitle">Nouvelles fonctionnalités & projets en cours de développement</p>
                     </div>
@@ -895,13 +905,23 @@
                     </div>
                 </div>
 
-                <!-- Section Version 2.3.5 (Actuelle) -->
+                <!-- Section Version 2.4.0 (Actuelle) -->
                 <div class="update-log-section section-current">
                     <div class="update-log-section-header">
-                        <span class="update-tag tag-current"><i class="ph-bold ph-check-circle"></i> Version 2.3.5 — Nouveautés</span>
+                        <span class="update-tag tag-current"><i class="ph-bold ph-check-circle"></i> Version 2.4.0 — Nouveautés</span>
                         <span class="update-tag-hint">Version installée</span>
                     </div>
                     <div class="update-items-list">
+                        <div class="update-item">
+                            <div class="update-item-icon color-update">
+                                <i class="ph-bold ph-gauge"></i>
+                            </div>
+                            <div class="update-item-content">
+                                <h4>Priorité élevée au démarrage sous Windows</h4>
+                                <p>Active cette option dans les <b>Paramètres</b> pour lancer HomeworkPlanner avec une priorité supérieure à la normale. Ton choix est conservé pour les prochains démarrages.</p>
+                            </div>
+                        </div>
+
                         <div class="update-item">
                             <div class="update-item-icon color-update">
                                 <i class="ph-bold ph-arrows-clockwise"></i>

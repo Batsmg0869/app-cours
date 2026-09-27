@@ -1,6 +1,7 @@
 const { app, BrowserWindow, ipcMain, Notification, Tray, Menu, shell, dialog, autoUpdater } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
 const { spawn } = require('child_process');
 const ics = require('ics');
 
@@ -53,6 +54,30 @@ ipcMain.on('install-update', () => {
 let win;
 let tray;
 let DATA_FILE;
+
+function applyAppPriority(enabled) {
+    if (process.platform !== 'win32') return false;
+
+    try {
+        const priority = enabled
+            ? os.constants.priority.PRIORITY_ABOVE_NORMAL
+            : os.constants.priority.PRIORITY_NORMAL;
+        os.setPriority(process.pid, priority);
+        return true;
+    } catch (error) {
+        console.error('Impossible de modifier la priorité du processus:', error);
+        return false;
+    }
+}
+
+function getSavedHighPriority() {
+    try {
+        const savedData = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+        return savedData.settings?.highPriority === true;
+    } catch (_) {
+        return false;
+    }
+}
 
 function createWindow() {
     DATA_FILE = path.join(app.getPath('userData'), 'data.json');
@@ -122,6 +147,8 @@ ipcMain.handle('save-data', (_, data) => {
         return true;
     } catch (e) { return false; }
 });
+
+ipcMain.handle('set-app-priority', (_, enabled) => applyAppPriority(enabled === true));
 
 ipcMain.handle('load-data', () => {
     try {
@@ -343,6 +370,8 @@ ipcMain.handle('load-pdf', (_, pdfPath) => {
 
 app.whenReady().then(() => {
     app.setAppUserModelId('com.batsmg0869.planner');
+    DATA_FILE = path.join(app.getPath('userData'), 'data.json');
+    applyAppPriority(getSavedHighPriority());
     createWindow();
     createTray();
 

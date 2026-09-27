@@ -1,6 +1,6 @@
 {
   "name": "homework-planner",
-  "version": "2.3.5",
+  "version": "2.4.0",
   "description": "Application de gestion de devoirs pour les étudiants.",
   "main": "main.js",
   "author": "Batsmg0869",
