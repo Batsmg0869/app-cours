@@ -18,6 +18,8 @@ contextBridge.exposeInMainWorld('storage', {
 contextBridge.exposeInMainWorld('updater', {
     checkForUpdates: () => ipcRenderer.send('check-for-updates'),
     installUpdate: () => ipcRenderer.send('install-update'),
+    openExternal: (url) => ipcRenderer.invoke('open-external-url', url),
     onUpdateStatus: (callback) => ipcRenderer.on('update-status', (_, message) => callback(message)),
-    onUpdateDownloaded: (callback) => ipcRenderer.on('update-downloaded', (_, releaseName) => callback(releaseName))
+    onUpdateDownloaded: (callback) => ipcRenderer.on('update-downloaded', (_, releaseName) => callback(releaseName)),
+    onGithubUpdateAvailable: (callback) => ipcRenderer.on('github-update-available', (_, info) => callback(info))
 });

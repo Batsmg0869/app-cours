@@ -4,9 +4,51 @@ const fs = require('fs');
 const os = require('os');
 const { spawn } = require('child_process');
 const ics = require('ics');
+const https = require('https');
 
-function setupUpdater(win) {
-    if (!app.isPackaged) return; // Uniquement en prod
+function compareVersions(v1, v2) {
+    const p1 = (v1 || '').replace(/^v\.?/, '').split('.').map(n => parseInt(n) || 0);
+    const p2 = (v2 || '').replace(/^v\.?/, '').split('.').map(n => parseInt(n) || 0);
+    for (let i = 0; i < Math.max(p1.length, p2.length); i++) {
+        const num1 = p1[i] || 0;
+        const num2 = p2[i] || 0;
+        if (num1 > num2) return 1;
+        if (num1 < num2) return -1;
+    }
+    return 0;
+}
+
+function checkGitHubLatestRelease() {
+    return new Promise((resolve, reject) => {
+        const options = {
+            hostname: 'api.github.com',
+            path: '/repos/Batsmg0869/app-cours/releases/latest',
+            headers: {
+                'User-Agent': 'HomeworkPlanner-App'
+            }
+        };
+        https.get(options, (res) => {
+            let data = '';
+            res.on('data', chunk => { data += chunk; });
+            res.on('end', () => {
+                if (res.statusCode >= 200 && res.statusCode < 300) {
+                    try {
+                        resolve(JSON.parse(data));
+                    } catch (e) {
+                        reject(new Error('Format de réponse GitHub invalide'));
+                    }
+                } else if (res.statusCode === 404) {
+                    resolve(null);
+                } else {
+                    reject(new Error(`Réponse GitHub HTTP ${res.statusCode}`));
+                }
+            });
+        }).on('error', err => reject(err));
+    });
+}
+
+function setupUpdater(winTarget) {
+    if (!app.isPackaged || process.platform === 'linux') return;
 
     const server = 'https://update.electronjs.org';
     const feed = `${server}/Batsmg0869/app-cours/${process.platform}-${process.arch}/${app.getVersion()}`;
@@ -17,37 +59,128 @@ function setupUpdater(win) {
         console.error('Erreur setFeedURL:', e);
     }
 
+    autoUpdater.removeAllListeners();
+
+    autoUpdater.on('checking-for-update', () => {
+        if (winTarget && !winTarget.isDestroyed()) {
+            winTarget.webContents.send('update-status', 'Recherche de mise à jour en cours...');
+        }
+    });
+
     autoUpdater.on('update-available', () => {
-        if (win) win.webContents.send('update-status', 'Mise à jour trouvée. Téléchargement en cours...');
+        if (winTarget && !winTarget.isDestroyed()) {
+            winTarget.webContents.send('update-status', 'Mise à jour trouvée. Téléchargement en cours...');
+        }
     });
 
     autoUpdater.on('update-downloaded', (event, releaseNotes, releaseName) => {
-        if (win) win.webContents.send('update-downloaded', releaseName);
+        if (winTarget && !winTarget.isDestroyed()) {
+            winTarget.webContents.send('update-downloaded', releaseName || 'Nouvelle version');
+        }
+        sendSmartNotification(
+            '🚀 Mise à jour prête !',
+            `La version ${releaseName || ''} a été téléchargée. Cliquez pour redémarrer et l'installer.`
+        );
     });
 
     autoUpdater.on('error', (err) => {
         const errMsg = err && err.message ? err.message : String(err);
-        if (win) win.webContents.send('update-status', `Erreur lors de la recherche : ${errMsg}`);
+        if (winTarget && !winTarget.isDestroyed()) {
+            winTarget.webContents.send('update-status', `Erreur lors de la recherche : ${errMsg}`);
+        }
         console.error('Erreur mise à jour:', err);
     });
 
     autoUpdater.on('update-not-available', () => {
-        if (win) win.webContents.send('update-status', 'Vous êtes déjà à la dernière version.');
+        if (winTarget && !winTarget.isDestroyed()) {
+            winTarget.webContents.send('update-status', `Vous êtes déjà sur la dernière version (v${app.getVersion()}).`);
+        }
     });
 }
 
-ipcMain.on('check-for-updates', (event) => {
-    if (!app.isPackaged) {
-        if (win) win.webContents.send('update-status', 'Les mises à jour sont désactivées en mode développement.');
+ipcMain.on('check-for-updates', async () => {
+    if (!win || win.isDestroyed()) return;
+    win.webContents.send('update-status', 'Recherche de mise à jour...');
+
+    // Si l'application n'est pas packagée ou sur Linux, on vérifie via l'API GitHub Releases
+    if (!app.isPackaged || process.platform === 'linux') {
+        try {
+            const release = await checkGitHubLatestRelease();
+            if (!release) {
+                win.webContents.send('update-status', 'Aucune version publiée trouvée sur GitHub.');
+                return;
+            }
+            const latestVer = (release.tag_name || '').replace(/^v\.?/, '');
+            const currentVer = app.getVersion();
+            if (compareVersions(latestVer, currentVer) > 0) {
+                win.webContents.send('update-status', `Une nouvelle version (${release.tag_name}) est disponible sur GitHub !`);
+                win.webContents.send('github-update-available', {
+                    tagName: release.tag_name,
+                    name: release.name || release.tag_name,
+                    url: release.html_url,
+                    assetUrl: (release.assets && release.assets.length > 0)
+                        ? (release.assets.find(a => a.name.endsWith('.exe'))?.browser_download_url || release.assets[0].browser_download_url)
+                        : release.html_url
+                });
+            } else {
+                win.webContents.send('update-status', `Vous êtes déjà sur la dernière version (v${currentVer}).`);
+            }
+        } catch (err) {
+            win.webContents.send('update-status', `Erreur lors de la vérification : ${err.message}`);
+        }
         return;
     }
-    if (win) win.webContents.send('update-status', 'Recherche de mise à jour...');
-    autoUpdater.checkForUpdates();
+
+    // En production Windows/macOS : autoUpdater avec fallback sécurisé
+    try {
+        autoUpdater.checkForUpdates();
+    } catch (err) {
+        console.error('Erreur autoUpdater.checkForUpdates:', err);
+        try {
+            const release = await checkGitHubLatestRelease();
+            if (release) {
+                const latestVer = (release.tag_name || '').replace(/^v\.?/, '');
+                const currentVer = app.getVersion();
+                if (compareVersions(latestVer, currentVer) > 0) {
+                    win.webContents.send('update-status', `Mise à jour disponible sur GitHub : ${release.tag_name}`);
+                    win.webContents.send('github-update-available', {
+                        tagName: release.tag_name,
+                        url: release.html_url,
+                        assetUrl: (release.assets && release.assets.length > 0)
+                            ? (release.assets.find(a => a.name.endsWith('.exe'))?.browser_download_url || release.assets[0].browser_download_url)
+                            : release.html_url
+                    });
+                    return;
+                }
+            }
+            win.webContents.send('update-status', `Vous êtes déjà sur la dernière version (v${app.getVersion()}).`);
+        } catch (_) {
+            win.webContents.send('update-status', `Erreur lors de la recherche : ${err.message}`);
+        }
+    }
 });
 
 ipcMain.on('install-update', () => {
     if (app.isPackaged) {
-        autoUpdater.quitAndInstall();
+        app.isQuiting = true; // Débloque win.on('close') pour permettre à l'installeur de redémarrer l'application
+        try {
+            autoUpdater.quitAndInstall();
+        } catch (err) {
+            console.error('Erreur quitAndInstall:', err);
+        }
+    }
+});
+
+ipcMain.handle('open-external-url', async (_, url) => {
+    try {
+        if (url && (url.startsWith('https://') || url.startsWith('http://'))) {
+            await shell.openExternal(url);
+            return true;
+        }
+        return false;
+    } catch (e) {
+        console.error('Erreur openExternal:', e);
+        return false;
     }
 });
 
@@ -107,16 +240,55 @@ function createWindow() {
     setupUpdater(win);
 }
 
-// Fonction de notification
-function sendScheduledNotification() {
+// Notification intelligente basée sur les devoirs
+function sendSmartNotification(title, body) {
     if (Notification.isSupported()) {
         const notif = new Notification({
-            title: 'Rappel Devoirs',
-            body: 'Oublie pas de finir tes devoirs',
+            title,
+            body,
             icon: path.join(__dirname, 'favicon.ico')
         });
         notif.show();
-        notif.on('click', () => win.show());
+        notif.on('click', () => { if (win) win.show(); });
+    }
+}
+
+// Fonction de notification périodique
+function sendScheduledNotification() {
+    try {
+        if (!fs.existsSync(DATA_FILE)) return;
+        const data = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+        const tasks = (data.tasks || []).filter(t => !t.completed);
+        if (tasks.length === 0) return;
+
+        const now = new Date();
+        const in24h = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+        const urgent = tasks.filter(t => {
+            if (!t.date) return false;
+            const due = new Date(`${t.date}T${t.time || '23:59'}`);
+            return due <= in24h && due >= now;
+        });
+        const haute = tasks.filter(t => t.priority === 'Haute');
+
+        if (urgent.length > 0) {
+            const names = urgent.slice(0, 2).map(t => t.title).join(', ');
+            sendSmartNotification(
+                `⚠️ ${urgent.length} devoir(s) à rendre bientôt !`,
+                names + (urgent.length > 2 ? ` et ${urgent.length - 2} autres...` : '')
+            );
+        } else if (haute.length > 0) {
+            sendSmartNotification(
+                `📚 ${tasks.length} devoir(s) en attente`,
+                `Priorité haute : ${haute[0].title} — ${haute[0].subject}`
+            );
+        } else if (tasks.length > 0) {
+            sendSmartNotification(
+                `📝 ${tasks.length} devoir(s) à faire`,
+                `N'oublie pas : ${tasks[0].title}`
+            );
+        }
+    } catch (e) {
+        console.error('Erreur notification:', e);
     }
 }
 
@@ -383,8 +555,30 @@ app.whenReady().then(() => {
         });
     }
 
-    // Notification toutes les 30 minutes
+    // Notification intelligente toutes les 30 minutes
     setInterval(sendScheduledNotification, 30 * 60 * 1000);
+
+    // Vérification des devoirs urgents au lancement (après 5 secondes)
+    setTimeout(() => {
+        try {
+            if (!fs.existsSync(DATA_FILE)) return;
+            const data = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+            const tasks = (data.tasks || []).filter(t => !t.completed);
+            const now = new Date();
+            const in24h = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+            const urgent = tasks.filter(t => {
+                if (!t.date) return false;
+                const due = new Date(`${t.date}T${t.time || '23:59'}`);
+                return due <= in24h && due >= now;
+            });
+            if (urgent.length > 0) {
+                sendSmartNotification(
+                    `⚠️ Rappel : ${urgent.length} devoir(s) à rendre dans 24h`,
+                    urgent.slice(0, 2).map(t => `${t.subject}: ${t.title}`).join(' | ')
+                );
+            }
+        } catch (e) { console.error('Erreur vérif urgents:', e); }
+    }, 5000);
 });
 
 app.on('window-all-closed', () => {

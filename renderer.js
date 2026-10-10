@@ -4,7 +4,6 @@ let coursesList = [
   {
     "id": 1,
     "subject": "Mathématiques",
-    "icon": "🔢",
     "courses": [
       {
         "id": 101,
@@ -60,7 +59,6 @@ let coursesList = [
   {
     "id": 2,
     "subject": "Physique-Chimie",
-    "icon": "⚛️",
     "courses": [
       {
         "id": 201,
@@ -102,7 +100,6 @@ let coursesList = [
   {
     "id": 3,
     "subject": "Histoire",
-    "icon": "📜",
     "courses": [
       {
         "id": 301,
@@ -151,7 +148,6 @@ let coursesList = [
   {
     "id": 4,
     "subject": "Géographie",
-    "icon": "🌍",
     "courses": [
       {
         "id": 401,
@@ -193,7 +189,6 @@ let coursesList = [
   {
     "id": 5,
     "subject": "Français",
-    "icon": "📖",
     "courses": [
       {
         "id": 501,
@@ -235,7 +230,6 @@ let coursesList = [
   {
     "id": 6,
     "subject": "Anglais",
-    "icon": "🇬🇧",
     "courses": [
       {
         "id": 601,
@@ -277,7 +271,6 @@ let coursesList = [
   {
     "id": 7,
     "subject": "Espagnol",
-    "icon": "🇪🇸",
     "courses": [
       {
         "id": 701,
@@ -319,7 +312,6 @@ let coursesList = [
   {
     "id": 8,
     "subject": "SVT",
-    "icon": "🧬",
     "courses": [
       {
         "id": 801,
@@ -438,21 +430,36 @@ window.addEventListener('DOMContentLoaded', async () => {
   // --- Auto-Updater setup ---
   const btnCheckUpdates = document.getElementById('btn-check-updates');
   const btnInstallUpdate = document.getElementById('btn-install-update');
+  const btnGithubUpdate = document.getElementById('btn-github-update');
   const updateStatusMsg = document.getElementById('update-status-msg');
+  let updateCheckTimeout = null;
 
   if (btnCheckUpdates && window.updater) {
       btnCheckUpdates.onclick = () => {
+          if (btnGithubUpdate) btnGithubUpdate.style.display = 'none';
+          if (btnInstallUpdate) btnInstallUpdate.style.display = 'none';
           updateStatusMsg.style.display = 'block';
           updateStatusMsg.style.color = 'var(--text-muted)';
           
           if (!navigator.onLine) {
               updateStatusMsg.style.color = '#ff4d4d';
               updateStatusMsg.innerHTML = `<i class="ph ph-wifi-slash" aria-hidden="true"></i> Pas de connexion Internet. Impossible de vérifier les mises à jour.`;
+              btnCheckUpdates.disabled = false;
               return;
           }
 
           updateStatusMsg.innerHTML = `<i class="ph ph-arrows-clockwise" aria-hidden="true"></i> Recherche de mises à jour...`;
           btnCheckUpdates.disabled = true;
+
+          clearTimeout(updateCheckTimeout);
+          updateCheckTimeout = setTimeout(() => {
+              if (btnCheckUpdates.disabled) {
+                  btnCheckUpdates.disabled = false;
+                  updateStatusMsg.style.color = 'var(--text-muted)';
+                  updateStatusMsg.textContent = 'Délai d\'attente dépassé. Vous pouvez réessayer.';
+              }
+          }, 15000);
+
           window.updater.checkForUpdates();
       };
   }
@@ -465,11 +472,13 @@ window.addEventListener('DOMContentLoaded', async () => {
 
   if (window.updater) {
       window.updater.onUpdateStatus((statusText) => {
+          clearTimeout(updateCheckTimeout);
           if (updateStatusMsg) {
               updateStatusMsg.style.display = 'block';
               
               const isError = statusText.toLowerCase().includes('erreur') || statusText.toLowerCase().includes('impossible');
               const isSuccess = statusText.includes('dernière version');
+              const isAvailable = statusText.includes('disponible') || statusText.includes('Mise à jour trouvée');
 
               if (isError) {
                   updateStatusMsg.style.color = '#ff4d4d';
@@ -477,18 +486,22 @@ window.addEventListener('DOMContentLoaded', async () => {
               } else if (isSuccess) {
                   updateStatusMsg.style.color = '#2ed573';
                   updateStatusMsg.innerHTML = `<i class="ph ph-check-circle" aria-hidden="true"></i> ${statusText}`;
+              } else if (isAvailable) {
+                  updateStatusMsg.style.color = '#38bdf8';
+                  updateStatusMsg.innerHTML = `<i class="ph ph-sparkle" aria-hidden="true"></i> ${statusText}`;
               } else {
                   updateStatusMsg.style.color = 'var(--text-muted)';
                   updateStatusMsg.textContent = statusText;
               }
           }
-          // Réactiver le bouton de recherche si terminé ou en cas d'erreur
-          if (btnCheckUpdates && (statusText.includes('dernière version') || statusText.toLowerCase().includes('erreur') || statusText.includes('désactivées'))) {
+          // Réactiver le bouton de recherche sauf si téléchargement en cours
+          if (btnCheckUpdates && !statusText.includes('Téléchargement en cours')) {
               btnCheckUpdates.disabled = false;
           }
       });
 
       window.updater.onUpdateDownloaded((releaseName) => {
+          clearTimeout(updateCheckTimeout);
           if (updateStatusMsg) {
               updateStatusMsg.style.display = 'block';
               updateStatusMsg.style.color = '#2ed573';
@@ -501,6 +514,24 @@ window.addEventListener('DOMContentLoaded', async () => {
               btnCheckUpdates.style.display = 'none';
           }
       });
+
+      if (window.updater.onGithubUpdateAvailable) {
+          window.updater.onGithubUpdateAvailable((info) => {
+              clearTimeout(updateCheckTimeout);
+              if (btnGithubUpdate) {
+                  btnGithubUpdate.style.display = 'inline-flex';
+                  btnGithubUpdate.innerHTML = `<i class="ph ph-download-simple" aria-hidden="true"></i> Télécharger ${info.tagName || 'la mise à jour'}`;
+                  btnGithubUpdate.onclick = () => {
+                      const targetUrl = info.assetUrl || info.url;
+                      if (window.updater.openExternal) {
+                          window.updater.openExternal(targetUrl);
+                      } else {
+                          window.open(targetUrl, '_blank');
+                      }
+                  };
+              }
+          });
+      }
   }
 
   // --- Sélecteur de version spécifique ---
@@ -517,6 +548,16 @@ window.addEventListener('DOMContentLoaded', async () => {
           versionPickerBox.style.display = isHidden ? 'block' : 'none';
 
           if (isHidden && availableReleases.length === 0) {
+              if (!navigator.onLine) {
+                  selectVersion.innerHTML = '<option value="">Hors ligne</option>';
+                  if (selectedVersionInfo) {
+                      selectedVersionInfo.style.display = 'block';
+                      selectedVersionInfo.style.color = '#ff4d4d';
+                      selectedVersionInfo.textContent = 'Connexion Internet requise pour charger les versions depuis GitHub.';
+                  }
+                  return;
+              }
+
               selectVersion.innerHTML = '<option value="">Chargement depuis GitHub...</option>';
               btnDownloadSelectedVersion.disabled = true;
 
@@ -566,7 +607,11 @@ window.addEventListener('DOMContentLoaded', async () => {
               btnDownloadSelectedVersion.onclick = () => {
                   const asset = rel.assets ? rel.assets.find(a => a.name.endsWith('.exe') || a.name.endsWith('.zip')) : null;
                   const targetUrl = asset ? asset.browser_download_url : rel.html_url;
-                  window.open(targetUrl, '_blank');
+                  if (window.updater && window.updater.openExternal) {
+                      window.updater.openExternal(targetUrl);
+                  } else {
+                      window.open(targetUrl, '_blank');
+                  }
               };
           } else {
               btnDownloadSelectedVersion.disabled = true;
@@ -591,8 +636,12 @@ window.addEventListener('DOMContentLoaded', async () => {
   // Search & Filter Listeners
   const searchTasks = document.getElementById('search-tasks');
   const filterPrio = document.getElementById('filter-priority');
+  const filterSubject = document.getElementById('filter-subject');
+  const sortTasks = document.getElementById('sort-tasks');
   if (searchTasks) searchTasks.addEventListener('input', renderTasks);
   if (filterPrio) filterPrio.addEventListener('change', renderTasks);
+  if (filterSubject) filterSubject.addEventListener('change', renderTasks);
+  if (sortTasks) sortTasks.addEventListener('change', renderTasks);
 
   const searchCourses = document.getElementById('search-courses');
   if (searchCourses) searchCourses.addEventListener('input', renderCourses);
@@ -877,7 +926,7 @@ function switchSection(targetId) {
 
   // Rendre le contenu de la section cible
   if (targetId === 'page-courses') renderCourses();
-  if (targetId === 'page-tasks') renderTasks();
+  if (targetId === 'page-tasks') { updateSubjectFilter(); renderTasks(); }
   if (targetId === 'page-schedule') renderSchedule();
   if (targetId === 'page-home') updateStats();
   if (targetId === 'page-settings') renderSettings();
@@ -1067,11 +1116,14 @@ function renderTasks() {
 
   const searchTerm = (document.getElementById('search-tasks')?.value || '').toLowerCase();
   const filterPrio = document.getElementById('filter-priority')?.value || '';
+  const filterSubj = document.getElementById('filter-subject')?.value || '';
+  const sortMode  = document.getElementById('sort-tasks')?.value || 'priority-date';
 
   let filteredTasks = taskList.filter(t => {
     const matchSearch = t.title.toLowerCase().includes(searchTerm) || t.subject.toLowerCase().includes(searchTerm);
     const matchPrio = filterPrio ? t.priority === filterPrio : true;
-    return matchSearch && matchPrio;
+    const matchSubj = filterSubj ? t.subject === filterSubj : true;
+    return matchSearch && matchPrio && matchSubj;
   });
 
   if (filteredTasks.length === 0) {
@@ -1083,17 +1135,28 @@ function renderTasks() {
     container.style.display = 'grid';
   }
 
-  // Sort tasks: Incomplete first, then priority, then date
+  // Tri avancé
   const priorityOrder = { 'Haute': 0, 'Normale': 1, 'Basse': 2 };
 
   filteredTasks.sort((a, b) => {
     if (a.completed !== b.completed) return a.completed ? 1 : -1;
-
-    const pA = priorityOrder[a.priority || 'Normale'];
-    const pB = priorityOrder[b.priority || 'Normale'];
-    if (pA !== pB) return pA - pB;
-
-    return new Date(`${a.date}T${a.time}`) - new Date(`${b.date}T${b.time}`);
+    switch (sortMode) {
+      case 'date-asc':
+        return new Date(`${a.date}T${a.time || '00:00'}`) - new Date(`${b.date}T${b.time || '00:00'}`);
+      case 'date-desc':
+        return new Date(`${b.date}T${b.time || '00:00'}`) - new Date(`${a.date}T${a.time || '00:00'}`);
+      case 'subject':
+        return (a.subject || '').localeCompare(b.subject || '');
+      case 'alpha':
+        return (a.title || '').localeCompare(b.title || '');
+      case 'priority-date':
+      default: {
+        const pA = priorityOrder[a.priority || 'Normale'];
+        const pB = priorityOrder[b.priority || 'Normale'];
+        if (pA !== pB) return pA - pB;
+        return new Date(`${a.date}T${a.time}`) - new Date(`${b.date}T${b.time}`);
+      }
+    }
   })
     .forEach(t => {
       const typeStr = t.type || 'Exercice';
@@ -1206,6 +1269,11 @@ window.toggleSubtask = async (taskId, subtaskIndex) => {
 
 // COURS (COURSES) - La version complète avec ouverture PDF se trouve plus bas (ligne ~1140)
 
+let pdfDoc = null;
+let currentPdfScale = 1.3;
+let currentPdfPath = '';
+let pdfPageObserver = null;
+
 function openPDF(pdfPath) {
   const pdfModal = document.getElementById('modal-pdf');
   const pdfViewer = document.getElementById('pdf-viewer');
@@ -1213,8 +1281,27 @@ function openPDF(pdfPath) {
 
   const folderPath = 'Cours/' + pdfPath;
   const fileName = pdfPath.split('/').pop();
+  currentPdfPath = folderPath;
+  currentPdfScale = 1.3;
+  updatePdfToolbarScale();
 
   console.log('Ouverture du PDF :', folderPath);
+
+  // Configuration du bouton de téléchargement / ouverture
+  const btnDownload = document.getElementById('pdf-download');
+  if (btnDownload) {
+    btnDownload.onclick = () => {
+      if(window.storage && window.storage.openAttachment) {
+         showToast("Ouverture du fichier...", "info");
+         window.storage.openAttachment(folderPath);
+      }
+    };
+  }
+
+  // Configuration du zoom
+  document.getElementById('pdf-zoom-in').onclick = () => updatePdfScale(0.2);
+  document.getElementById('pdf-zoom-out').onclick = () => updatePdfScale(-0.2);
+  document.getElementById('pdf-zoom-reset').onclick = () => { currentPdfScale = 1.0; updatePdfScale(0); };
 
   // Récupérer le PDF via IPC
   window.storage.loadPDF(folderPath).then(base64Data => {
@@ -1224,6 +1311,7 @@ function openPDF(pdfPath) {
     }
 
     pdfTitle.textContent = fileName;
+    pdfTitle.title = fileName;
     pdfViewer.innerHTML = '<div style="text-align:center; color:var(--text-dim); padding:20px;">📄 Chargement du PDF...</div>';
 
     // Convertir base64 en Uint8Array
@@ -1236,71 +1324,74 @@ function openPDF(pdfPath) {
     // Utiliser pdfjs-dist pour afficher le PDF
     const pdfjsLib = window.pdfjsLib;
     pdfjsLib.getDocument(bytes).promise.then(async pdf => {
+      pdfDoc = pdf;
       console.log('PDF chargé, pages:', pdf.numPages);
+      pdfViewer.innerHTML = '';
 
-      pdfViewer.innerHTML = ''; // Effacer le message de chargement
+      document.getElementById('pdf-page-count').textContent = pdf.numPages;
+      document.getElementById('pdf-page-num').textContent = 1;
 
-      const numPages = pdf.numPages;
-      const scale = 1.3;
+      // Configuration de l'Intersection Observer pour le lazy loading
+      if (pdfPageObserver) pdfPageObserver.disconnect();
+      pdfPageObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const pageNum = parseInt(entry.target.dataset.pageNumber);
+            document.getElementById('pdf-page-num').textContent = pageNum;
+            renderPdfPageIfNotRendered(entry.target, pageNum);
+          }
+        });
+      }, { root: pdfViewer, threshold: 0.1 });
 
-      // Charger les pages progressivement (optimisation)
-      for (let pageNum = 1; pageNum <= numPages; pageNum++) {
-        // Créer un conteneur pour chaque page
+      for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
         const pageContainer = document.createElement('div');
         pageContainer.className = 'pdf-page-container';
-        pageContainer.style.marginBottom = '20px';
-        pageContainer.style.textAlign = 'center';
-        pageContainer.style.position = 'relative';
+        pageContainer.id = `pdf-page-${pageNum}`;
+        pageContainer.dataset.pageNumber = pageNum;
+        pageContainer.dataset.rendered = "false";
 
-        // Numéro de page (cliquable pour zoom)
-        const pageLabel = document.createElement('div');
-        pageLabel.style.color = 'var(--text-dim)';
-        pageLabel.style.fontSize = '0.9rem';
-        pageLabel.style.marginBottom = '10px';
-        pageLabel.style.cursor = 'pointer';
-        pageLabel.style.transition = 'color 0.3s';
-        pageLabel.textContent = `📄 Page ${pageNum} / ${numPages} - Cliquez pour zoomer`;
-        pageLabel.onmouseover = () => pageLabel.style.color = 'var(--primary)';
-        pageLabel.onmouseout = () => pageLabel.style.color = 'var(--text-dim)';
-        pageContainer.appendChild(pageLabel);
+        // Taille temporaire (ratio A4)
+        pageContainer.style.width = '800px';
+        pageContainer.style.height = '1130px';
+        pageContainer.style.maxWidth = '100%';
+        pageContainer.style.margin = '0 auto 24px auto';
+        pageContainer.style.backgroundColor = 'white';
+        pageContainer.style.display = 'flex';
+        pageContainer.style.alignItems = 'center';
+        pageContainer.style.justifyContent = 'center';
+        pageContainer.style.position = 'relative';
+        pageContainer.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
+        pageContainer.style.borderRadius = '8px';
+
+        const loadingMsg = document.createElement('span');
+        loadingMsg.className = 'pdf-loading-msg';
+        loadingMsg.innerHTML = `<i class="ph ph-spinner ph-spin"></i> Chargement page ${pageNum}...`;
+        loadingMsg.style.color = '#a0aec0';
+        loadingMsg.style.display = 'flex';
+        loadingMsg.style.gap = '8px';
+        loadingMsg.style.alignItems = 'center';
+        pageContainer.appendChild(loadingMsg);
 
         pdfViewer.appendChild(pageContainer);
-
-        // Charger la page de manière asynchrone
-        try {
-          const page = await pdf.getPage(pageNum);
-          const viewport = page.getViewport({ scale: scale });
-
-          const canvas = document.createElement('canvas');
-          const context = canvas.getContext('2d');
-          canvas.height = viewport.height;
-          canvas.width = viewport.width;
-          canvas.style.border = '1px solid rgba(99, 102, 241, 0.2)';
-          canvas.style.borderRadius = '8px';
-          canvas.style.maxWidth = '100%';
-          canvas.style.height = 'auto';
-          canvas.style.cursor = 'zoom-in';
-          canvas.style.transition = 'transform 0.3s';
-
-          // Effet hover
-          canvas.onmouseover = () => canvas.style.transform = 'scale(1.02)';
-          canvas.onmouseout = () => canvas.style.transform = 'scale(1)';
-
-          await page.render({
-            canvasContext: context,
-            viewport: viewport
-          }).promise;
-
-          // Ajouter l'événement de zoom au clic
-          canvas.onclick = () => zoomPage(canvas, pageNum, numPages);
-          pageLabel.onclick = () => zoomPage(canvas, pageNum, numPages);
-
-          pageContainer.appendChild(canvas);
-        } catch (err) {
-          console.error('Erreur au chargement de la page', pageNum, ':', err);
-          pageContainer.innerHTML += '<p style="color:var(--urgent)">❌ Erreur de chargement</p>';
-        }
+        pdfPageObserver.observe(pageContainer);
       }
+
+      // Boutons Suivant / Précédent
+      document.getElementById('pdf-prev').onclick = () => {
+        const current = parseInt(document.getElementById('pdf-page-num').textContent);
+        if (current > 1) {
+            const target = document.getElementById(`pdf-page-${current - 1}`);
+            if (target) target.scrollIntoView({ behavior: 'smooth' });
+        }
+      };
+      document.getElementById('pdf-next').onclick = () => {
+        const current = parseInt(document.getElementById('pdf-page-num').textContent);
+        if (current < pdf.numPages) {
+            const target = document.getElementById(`pdf-page-${current + 1}`);
+            if (target) target.scrollIntoView({ behavior: 'smooth' });
+        }
+      };
+
     }).catch(err => {
       console.error('Erreur au chargement du PDF:', err);
       pdfViewer.innerHTML = '<p style="color:var(--urgent); text-align:center; padding:20px;">❌ Erreur lors du chargement du PDF</p>';
@@ -1313,107 +1404,59 @@ function openPDF(pdfPath) {
   });
 }
 
-// Fonction pour zoomer sur une page
-function zoomPage(canvas, pageNum, totalPages) {
-  // Créer l'overlay de zoom
-  const zoomOverlay = document.createElement('div');
-  zoomOverlay.id = 'zoom-overlay';
-  zoomOverlay.style.position = 'fixed';
-  zoomOverlay.style.top = '0';
-  zoomOverlay.style.left = '0';
-  zoomOverlay.style.width = '100%';
-  zoomOverlay.style.height = '100%';
-  zoomOverlay.style.backgroundColor = 'rgba(0, 0, 0, 0.95)';
-  zoomOverlay.style.zIndex = '10000';
-  zoomOverlay.style.display = 'flex';
-  zoomOverlay.style.flexDirection = 'column';
-  zoomOverlay.style.alignItems = 'center';
-  zoomOverlay.style.justifyContent = 'center';
-  zoomOverlay.style.padding = '20px';
-  zoomOverlay.style.animation = 'fadeIn 0.3s ease';
+function updatePdfToolbarScale() {
+  const zoomDisplay = document.getElementById('pdf-zoom-level');
+  if(zoomDisplay) zoomDisplay.textContent = Math.round(currentPdfScale * 100) + '%';
+}
 
-  // Header avec titre et bouton fermer
-  const header = document.createElement('div');
-  header.style.position = 'absolute';
-  header.style.top = '20px';
-  header.style.left = '0';
-  header.style.right = '0';
-  header.style.display = 'flex';
-  header.style.justifyContent = 'space-between';
-  header.style.alignItems = 'center';
-  header.style.padding = '0 40px';
-  header.style.color = 'var(--text-main)';
+function updatePdfScale(delta) {
+  if (!pdfDoc) return;
+  const newScale = currentPdfScale + delta;
+  if (newScale >= 0.5 && newScale <= 4.0) {
+    currentPdfScale = newScale;
+    updatePdfToolbarScale();
 
-  const pageInfo = document.createElement('div');
-  pageInfo.style.fontSize = '1.2rem';
-  pageInfo.style.fontWeight = '600';
-  pageInfo.textContent = `Page ${pageNum} / ${totalPages}`;
-
-  const closeBtn = document.createElement('button');
-  closeBtn.innerHTML = '✕';
-  closeBtn.style.background = 'var(--urgent)';
-  closeBtn.style.border = 'none';
-  closeBtn.style.color = 'white';
-  closeBtn.style.fontSize = '2rem';
-  closeBtn.style.width = '50px';
-  closeBtn.style.height = '50px';
-  closeBtn.style.borderRadius = '50%';
-  closeBtn.style.cursor = 'pointer';
-  closeBtn.style.transition = 'transform 0.2s, background 0.2s';
-  closeBtn.onmouseover = () => {
-    closeBtn.style.transform = 'scale(1.1)';
-    closeBtn.style.background = '#dc2626';
-  };
-  closeBtn.onmouseout = () => {
-    closeBtn.style.transform = 'scale(1)';
-    closeBtn.style.background = 'var(--urgent)';
-  };
-  // Le bouton de fermeture sera connecté via closeZoom() défini plus bas
-  header.appendChild(pageInfo);
-  header.appendChild(closeBtn);
-
-  // Canvas zoomé - COPIER le contenu au lieu de cloner
-  const zoomedCanvas = document.createElement('canvas');
-  zoomedCanvas.width = canvas.width;
-  zoomedCanvas.height = canvas.height;
-
-  // Copier le contenu du canvas original
-  const ctx = zoomedCanvas.getContext('2d');
-  ctx.drawImage(canvas, 0, 0);
-
-  // Styles pour le canvas zoomé
-  zoomedCanvas.style.maxWidth = '90%';
-  zoomedCanvas.style.maxHeight = '80vh';
-  zoomedCanvas.style.width = 'auto';
-  zoomedCanvas.style.height = 'auto';
-  zoomedCanvas.style.border = '2px solid var(--primary)';
-  zoomedCanvas.style.borderRadius = '12px';
-  zoomedCanvas.style.boxShadow = '0 25px 50px rgba(0, 0, 0, 0.5)';
-  zoomedCanvas.style.cursor = 'default';
-  zoomedCanvas.style.animation = 'zoomIn 0.3s ease';
-
-  zoomOverlay.appendChild(header);
-  zoomOverlay.appendChild(zoomedCanvas);
-
-  // Fonction centralisée de fermeture pour éviter la fuite mémoire
-  function closeZoom() {
-    if (document.body.contains(zoomOverlay)) {
-      document.body.removeChild(zoomOverlay);
-    }
-    document.removeEventListener('keydown', escapeHandler);
+    // Re-rendre uniquement les pages déjà affichées
+    const containers = document.querySelectorAll('.pdf-page-container[data-rendered="true"]');
+    containers.forEach(container => {
+      container.dataset.rendered = "false";
+      container.innerHTML = `<span style="color:#a0aec0; display:flex; gap:8px; align-items:center;"><i class="ph ph-spinner ph-spin"></i> Rechargement...</span>`;
+      renderPdfPageIfNotRendered(container, parseInt(container.dataset.pageNumber));
+    });
   }
+}
 
-  // Fermer avec la touche Échap
-  const escapeHandler = (e) => {
-    if (e.key === 'Escape') closeZoom();
-  };
-  document.addEventListener('keydown', escapeHandler);
+async function renderPdfPageIfNotRendered(container, pageNum) {
+  if (!pdfDoc || container.dataset.rendered === "true") return;
 
-  // Mettre à jour les autres boutons de fermeture pour utiliser closeZoom
-  closeBtn.onclick = () => closeZoom();
-  zoomOverlay.onclick = (e) => { if (e.target === zoomOverlay) closeZoom(); };
+  try {
+    const page = await pdfDoc.getPage(pageNum);
+    const viewport = page.getViewport({ scale: currentPdfScale });
 
-  document.body.appendChild(zoomOverlay);
+    container.innerHTML = ''; // Nettoyer le loading
+    container.style.width = `${viewport.width}px`;
+    container.style.height = `${viewport.height}px`;
+
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    canvas.height = viewport.height;
+    canvas.width = viewport.width;
+    canvas.style.maxWidth = '100%';
+    canvas.style.height = 'auto';
+    canvas.style.borderRadius = '8px';
+    canvas.style.display = 'block';
+
+    await page.render({
+      canvasContext: context,
+      viewport: viewport
+    }).promise;
+
+    container.appendChild(canvas);
+    container.dataset.rendered = "true";
+  } catch(err) {
+    console.error(`Erreur de rendu page ${pageNum}`, err);
+    container.innerHTML = `<span style="color:var(--urgent);">❌ Erreur de chargement</span>`;
+  }
 }
 
 // PLANNING (COURS)
@@ -1547,6 +1590,7 @@ function updateStats() {
 
   updateSidebarBadges();
   if (typeof renderDashboard === 'function') renderDashboard();
+  renderTodaySchedule();
 }
 
 const btnSave = document.getElementById('btn-save');
@@ -1644,7 +1688,7 @@ function renderCourses() {
   filteredCoursesList.forEach(subject => {
     const subjectDiv = document.createElement('div');
     subjectDiv.className = 'subject-section';
-    subjectDiv.innerHTML = `<h3>${subject.icon} ${subject.subject}</h3>`;
+    subjectDiv.innerHTML = `<h3><i class="ph ph-folder"></i> ${subject.subject}</h3>`;
 
     const coursesGrid = document.createElement('div');
     coursesGrid.className = 'courses-grid';
@@ -2353,3 +2397,398 @@ function renderHistory() {
     container.appendChild(div);
   });
 }
+
+// =====================================================
+// PROGRAMME DU JOUR
+// =====================================================
+function renderTodaySchedule() {
+  const container = document.getElementById('home-today-courses');
+  const wrap = document.getElementById('home-today-schedule-wrap');
+  if (!container) return;
+
+  const now = new Date();
+  const todayDayIndex = now.getDay(); // 0=dim, 1=lun...6=sam
+  const todayPlannerIndex = todayDayIndex === 0 ? -1 : todayDayIndex - 1; // 0=lun...4=ven
+
+  if (todayPlannerIndex < 0 || todayPlannerIndex > 4) {
+    // Week-end
+    if (wrap) wrap.style.display = 'none';
+    return;
+  }
+
+  if (wrap) wrap.style.display = 'block';
+
+  const todayCourses = courseList.filter(c =>
+    c.day === todayPlannerIndex && (c.week === currentViewWeek || c.week === 'both')
+  );
+
+  if (todayCourses.length === 0) {
+    container.innerHTML = `<div class="home-empty-msg"><i class="ph ph-coffee"></i> Pas de cours aujourd'hui — profite bien !</div>`;
+    return;
+  }
+
+  todayCourses.sort((a, b) => a.start.localeCompare(b.start));
+  const nowStr = now.toTimeString().slice(0, 5);
+
+  container.innerHTML = todayCourses.map(c => {
+    const isOngoing = c.start <= nowStr && nowStr <= c.end;
+    const isPast = c.end < nowStr;
+    let statusClass = '';
+    if (isOngoing) statusClass = 'today-course--ongoing';
+    else if (isPast) statusClass = 'today-course--past';
+
+    return `<div class="today-course-row ${statusClass}" style="border-left-color: ${c.color || 'var(--primary)'};">
+      ${isOngoing ? '<span class="today-course-live"><i class="ph-bold ph-broadcast"></i> En cours</span>' : ''}
+      <div class="today-course-time"><i class="ph ph-clock"></i> ${c.start} - ${c.end}</div>
+      <div class="today-course-subject">${c.subject}</div>
+      ${c.room ? `<div class="today-course-room"><i class="ph ph-door"></i> ${c.room}</div>` : ''}
+      ${c.prof ? `<div class="today-course-prof"><i class="ph ph-user"></i> ${c.prof}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+// =====================================================
+// FILTRE PAR MATIÈRE — Devoirs
+// =====================================================
+function updateSubjectFilter() {
+  const sel = document.getElementById('filter-subject');
+  if (!sel) return;
+  const subjects = [...new Set(taskList.map(t => t.subject).filter(Boolean))].sort();
+  const current = sel.value;
+  sel.innerHTML = '<option value="">Toutes matières</option>' +
+    subjects.map(s => `<option value="${s}" ${s === current ? 'selected' : ''}>${s}</option>`).join('');
+}
+
+// =====================================================
+// TRIMESTRE — Notes
+// =====================================================
+let currentTrim = 'all';
+
+function setupTrimButtons() {
+  document.querySelectorAll('.btn-trim').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.btn-trim').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentTrim = btn.getAttribute('data-trim');
+      renderGrades();
+    });
+  });
+}
+
+// Override renderGrades pour le filtre trimestre + badge trim
+const _origRenderGrades = renderGrades;
+renderGrades = function() {
+  const container = document.getElementById('grades-container');
+  if (!container) return;
+  container.innerHTML = '';
+
+  const filteredGrades = currentTrim === 'all'
+    ? gradesList
+    : gradesList.filter(g => g.trim === currentTrim);
+
+  let totalGrade = 0, totalCoef = 0;
+  filteredGrades.forEach(g => { totalGrade += g.grade * g.coef; totalCoef += g.coef; });
+
+  const average = totalCoef > 0 ? (totalGrade / totalCoef) : null;
+  const target = parseFloat(document.getElementById('target-average')?.value) || 14;
+
+  const avgEl = document.getElementById('overall-average');
+  if (avgEl) {
+    avgEl.textContent = average !== null ? average.toFixed(2) + '/20' : '--/20';
+    avgEl.style.color = average !== null ? (average >= target ? 'var(--success)' : 'var(--urgent)') : 'var(--text-main)';
+  }
+
+  const bySubject = {};
+  filteredGrades.forEach(g => {
+    if (!bySubject[g.subject]) bySubject[g.subject] = { total: 0, coef: 0 };
+    bySubject[g.subject].total += g.grade * g.coef;
+    bySubject[g.subject].coef += g.coef;
+  });
+  const subjectAverages = Object.entries(bySubject).map(([name, v]) => ({
+    name, avg: v.coef > 0 ? v.total / v.coef : 0
+  })).sort((a, b) => b.avg - a.avg);
+
+  const bestEl = document.getElementById('grades-best');
+  const worstEl = document.getElementById('grades-worst');
+  if (bestEl) bestEl.textContent = subjectAverages.length > 0 ? `${subjectAverages[0].name} (${subjectAverages[0].avg.toFixed(1)})` : '--';
+  if (worstEl) worstEl.textContent = subjectAverages.length > 0 ? `${subjectAverages[subjectAverages.length - 1].name} (${subjectAverages[subjectAverages.length - 1].avg.toFixed(1)})` : '--';
+
+  const ctxGrades = document.getElementById('chart-grades');
+  if (ctxGrades && typeof Chart !== 'undefined') {
+    if (chartGradesInstance) chartGradesInstance.destroy();
+    const colors = subjectAverages.map(s => s.avg >= target ? 'rgba(52, 211, 153, 0.8)' : 'rgba(251, 113, 133, 0.8)');
+    chartGradesInstance = new Chart(ctxGrades.getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: subjectAverages.map(s => s.name),
+        datasets: [{ label: 'Moyenne /20', data: subjectAverages.map(s => parseFloat(s.avg.toFixed(2))), backgroundColor: colors, borderColor: colors.map(c => c.replace('0.8', '1')), borderWidth: 1, borderRadius: 6 }]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          y: { min: 0, max: 20, ticks: { color: 'rgba(255,255,255,0.6)' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+          x: { ticks: { color: 'rgba(255,255,255,0.6)' }, grid: { display: false } }
+        },
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.y}/20` } } }
+      }
+    });
+  }
+
+  const emptyState = document.getElementById('empty-grades');
+  if (filteredGrades.length === 0) {
+    if (emptyState) emptyState.style.display = 'flex';
+    container.style.display = 'none';
+    return;
+  } else {
+    if (emptyState) emptyState.style.display = 'none';
+    container.style.display = 'grid';
+  }
+
+  [...filteredGrades].sort((a, b) => {
+    if (a.date && b.date) return new Date(b.date) - new Date(a.date);
+    return 0;
+  }).forEach(g => {
+    const noteColor = g.grade >= target ? 'var(--success)' : g.grade >= target * 0.7 ? 'var(--primary)' : 'var(--urgent)';
+    const card = document.createElement('div');
+    card.className = 'grade-card';
+    const trimBadge = g.trim ? `<span class="badge-type" style="font-size:0.72rem;background:rgba(129,140,248,0.15);color:var(--primary);">${g.trim}</span>` : '';
+    card.innerHTML = `
+      <div class="grade-card-score" style="color: ${noteColor};">
+          <span class="grade-value">${g.grade}</span><span class="grade-max">/20</span>
+      </div>
+      <div class="grade-card-info">
+          <div class="grade-subject">${g.subject}</div>
+          <div class="grade-meta">
+              ${g.type ? `<span class="badge-type" style="font-size:0.75rem;">${g.type}</span>` : ''}
+              ${trimBadge}
+              ${g.date ? `<span style="color:var(--text-muted);font-size:0.8rem;"><i class="ph ph-calendar-blank"></i> ${new Date(g.date).toLocaleDateString('fr-FR')}</span>` : ''}
+              <span style="color:var(--text-muted);font-size:0.8rem;">Coef: ${g.coef}</span>
+          </div>
+          ${g.comment ? `<div class="grade-comment"><i class="ph ph-note"></i> ${g.comment}</div>` : ''}
+      </div>
+      <div class="grade-card-actions">
+          <button class="btn-icon btn-edit-grade" title="Modifier"><i class="ph ph-pencil-simple"></i></button>
+          <button class="btn-icon danger btn-delete-grade" title="Supprimer"><i class="ph ph-trash"></i></button>
+      </div>`;
+
+    card.querySelector('.btn-edit-grade').onclick = () => {
+      editingGradeId = g.id;
+      document.getElementById('grade-subject').value = g.subject;
+      document.getElementById('grade-value').value = g.grade;
+      document.getElementById('grade-coef').value = g.coef;
+      document.getElementById('grade-type').value = g.type || 'Contrôle';
+      document.getElementById('grade-date').value = g.date || '';
+      document.getElementById('grade-comment').value = g.comment || '';
+      document.getElementById('grade-modal-title').textContent = 'Modifier la note';
+      openModal(gradeModal);
+    };
+    card.querySelector('.btn-delete-grade').onclick = async () => {
+      card.style.animation = 'cardExit 0.25s ease forwards';
+      setTimeout(async () => {
+        gradesList = gradesList.filter(x => x.id !== g.id);
+        await saveData();
+        renderGrades();
+      }, 250);
+    };
+    container.appendChild(card);
+  });
+};
+
+// Patch gradeForm.onsubmit pour sauvegarder le trimestre
+gradeForm.onsubmit = async (e) => {
+  e.preventDefault();
+  const subject = document.getElementById('grade-subject').value.trim();
+  const grade = parseFloat(document.getElementById('grade-value').value);
+  const coef = parseFloat(document.getElementById('grade-coef').value) || 1;
+  const type = document.getElementById('grade-type').value;
+  const date = document.getElementById('grade-date').value;
+  const comment = document.getElementById('grade-comment').value.trim();
+  const trim = currentTrim !== 'all' ? currentTrim : '';
+
+  if (isNaN(grade) || grade < 0 || grade > 20) {
+    showToast('Note invalide. Elle doit être comprise entre 0 et 20.', 'error');
+    return;
+  }
+  if (editingGradeId) {
+    const idx = gradesList.findIndex(g => g.id === editingGradeId);
+    if (idx !== -1) gradesList[idx] = { ...gradesList[idx], subject, grade, coef, type, date, comment, trim };
+  } else {
+    gradesList.push({ id: Date.now(), subject, grade, coef, type, date, comment, trim });
+  }
+  await saveData();
+  closeModal(gradeModal);
+  renderGrades();
+};
+
+// =====================================================
+// GESTION DES COURS PERSONNALISÉS
+// =====================================================
+let editingCourseFicheId = null;
+let cfPdfPath = null;
+let cfPdfNameStr = '';
+
+const subjectModal = document.getElementById('modal-subject');
+const courseFicheModal = document.getElementById('modal-course-fiche');
+const subjectForm = document.getElementById('form-subject');
+const courseFicheForm = document.getElementById('form-course-fiche');
+
+document.getElementById('btn-add-subject').addEventListener('click', () => {
+  subjectForm.reset();
+  openModal(subjectModal);
+});
+document.getElementById('btn-close-subject').addEventListener('click', () => closeModal(subjectModal));
+
+subjectForm.onsubmit = async (e) => {
+  e.preventDefault();
+  const name = document.getElementById('subj-name').value.trim();
+  if (!name) return;
+  if (coursesList.some(s => s.subject.toLowerCase() === name.toLowerCase())) {
+    showToast('Cette matière existe déjà !', 'warning');
+    return;
+  }
+  coursesList.push({ id: Date.now(), subject: name, courses: [] });
+  await saveData();
+  closeModal(subjectModal);
+  renderCourses();
+  showToast(`Matière "${name}" créée !`, 'success');
+};
+
+document.getElementById('btn-add-course-fiche').addEventListener('click', () => {
+  editingCourseFicheId = null;
+  cfPdfPath = null;
+  cfPdfNameStr = '';
+  courseFicheForm.reset();
+  document.getElementById('cf-pdf-name').textContent = '';
+  const cfSubjectSel = document.getElementById('cf-subject');
+  cfSubjectSel.innerHTML = '<option value="">-- Choisir une matière --</option>' +
+    coursesList.map(s => `<option value="${s.id}">${s.subject}</option>`).join('');
+  openModal(courseFicheModal);
+});
+document.getElementById('btn-close-course-fiche').addEventListener('click', () => closeModal(courseFicheModal));
+
+const cfDropzone = document.getElementById('cf-dropzone');
+const cfPdfInput = document.getElementById('cf-pdf-input');
+cfDropzone.onclick = () => cfPdfInput.click();
+cfDropzone.ondragover = (e) => { e.preventDefault(); cfDropzone.style.borderColor = 'var(--primary)'; };
+cfDropzone.ondragleave = () => { cfDropzone.style.borderColor = ''; };
+cfDropzone.ondrop = async (e) => {
+  e.preventDefault();
+  cfDropzone.style.borderColor = '';
+  const file = e.dataTransfer.files[0];
+  if (file) await handleCoursePDF(file);
+};
+cfPdfInput.onchange = async (e) => {
+  const file = e.target.files[0];
+  if (file) await handleCoursePDF(file);
+};
+
+async function handleCoursePDF(file) {
+  const res = await window.storage.saveAttachment({ filePath: file.path, fileName: file.name });
+  if (res.success) {
+    cfPdfPath = res.path;
+    cfPdfNameStr = res.fileName;
+    document.getElementById('cf-pdf-name').innerHTML = `<i class="ph ph-file-pdf"></i> ${res.fileName}`;
+    showToast('PDF chargé !', 'success');
+  } else {
+    showToast('Erreur lors du chargement du PDF.', 'error');
+  }
+}
+
+courseFicheForm.onsubmit = async (e) => {
+  e.preventDefault();
+  const subjectId = parseInt(document.getElementById('cf-subject').value);
+  const title = document.getElementById('cf-title').value.trim();
+  const description = document.getElementById('cf-description').value.trim();
+  const date = document.getElementById('cf-date').value;
+  const trim = document.getElementById('cf-trim').value;
+
+  if (!subjectId || !title) {
+    showToast('Choisissez une matière et entrez un titre.', 'warning');
+    return;
+  }
+  const subjectEntry = coursesList.find(s => s.id === subjectId);
+  if (!subjectEntry) { showToast('Matière introuvable.', 'error'); return; }
+
+  const newCourse = {
+    id: Date.now(), title,
+    description: description || title,
+    date: date || new Date().toISOString().split('T')[0],
+    trim, isCustom: true,
+    pdf: null,
+    attachmentPath: cfPdfPath || null,
+    attachmentName: cfPdfNameStr || null
+  };
+
+  if (editingCourseFicheId) {
+    const idx = subjectEntry.courses.findIndex(c => c.id === editingCourseFicheId);
+    if (idx !== -1) subjectEntry.courses[idx] = { ...subjectEntry.courses[idx], ...newCourse };
+  } else {
+    subjectEntry.courses.push(newCourse);
+  }
+  await saveData();
+  closeModal(courseFicheModal);
+  renderCourses();
+  showToast(`Cours "${title}" ajouté !`, 'success');
+};
+
+// =====================================================
+// SIMULATEUR DE MOYENNE
+// =====================================================
+const simulatorModal = document.getElementById('modal-simulator');
+
+document.getElementById('btn-open-simulator').addEventListener('click', () => {
+  let totalGrade = 0, totalCoef = 0;
+  gradesList.forEach(g => { totalGrade += g.grade * g.coef; totalCoef += g.coef; });
+  const currentAvg = totalCoef > 0 ? (totalGrade / totalCoef) : null;
+  document.getElementById('sim-current-avg').textContent = currentAvg !== null ? currentAvg.toFixed(2) + '/20' : '--/20';
+  document.getElementById('simulator-result').style.display = 'none';
+  document.getElementById('sim-grade-value').value = '';
+  document.getElementById('sim-grade-coef').value = '1';
+  document.getElementById('sim-grade-subject').value = '';
+  openModal(simulatorModal);
+});
+document.getElementById('btn-close-simulator').addEventListener('click', () => closeModal(simulatorModal));
+
+document.getElementById('btn-run-simulator').addEventListener('click', () => {
+  const simGrade = parseFloat(document.getElementById('sim-grade-value').value);
+  const simCoef = parseFloat(document.getElementById('sim-grade-coef').value) || 1;
+  const target = parseFloat(document.getElementById('target-average')?.value) || 14;
+
+  if (isNaN(simGrade) || simGrade < 0 || simGrade > 20) {
+    showToast('Entre une note valide entre 0 et 20.', 'warning');
+    return;
+  }
+
+  let totalGrade = 0, totalCoef = 0;
+  gradesList.forEach(g => { totalGrade += g.grade * g.coef; totalCoef += g.coef; });
+  const currentAvg = totalCoef > 0 ? totalGrade / totalCoef : null;
+  const newTotalGrade = totalGrade + simGrade * simCoef;
+  const newTotalCoef = totalCoef + simCoef;
+  const newAvg = newTotalGrade / newTotalCoef;
+  const delta = currentAvg !== null ? newAvg - currentAvg : null;
+
+  document.getElementById('sim-new-avg').textContent = newAvg.toFixed(2) + '/20';
+  const deltaEl = document.getElementById('sim-delta');
+  if (delta !== null) {
+    const sign = delta >= 0 ? '+' : '';
+    deltaEl.textContent = `${sign}${delta.toFixed(2)} pts`;
+    deltaEl.style.color = delta >= 0 ? 'var(--success)' : 'var(--urgent)';
+  } else {
+    deltaEl.textContent = 'Première note';
+    deltaEl.style.color = 'var(--primary)';
+  }
+
+  const fillPct = Math.min(100, (newAvg / 20) * 100);
+  const targetPct = Math.min(100, (target / 20) * 100);
+  document.getElementById('sim-progress-fill').style.width = fillPct + '%';
+  document.getElementById('sim-progress-fill').style.background = newAvg >= target ? 'var(--success)' : 'var(--urgent)';
+  document.getElementById('sim-progress-target').style.left = targetPct + '%';
+  document.getElementById('sim-target-label').textContent = `Obj. ${target}/20`;
+  document.getElementById('simulator-result').style.display = 'block';
+});
+
+// Init finale
+document.addEventListener('DOMContentLoaded', () => {
+  setupTrimButtons();
+  renderTodaySchedule();
+});

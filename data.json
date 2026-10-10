@@ -5,7 +5,6 @@
     {
       "id": 1,
       "subject": "Mathématiques",
-      "icon": "🔢",
       "courses": [
         {
           "id": 101,
@@ -33,7 +32,6 @@
     {
       "id": 2,
       "subject": "Physique-Chimie",
-      "icon": "⚛️",
       "courses": [
         {
           "id": 201,
@@ -61,7 +59,6 @@
     {
       "id": 3,
       "subject": "Histoire",
-      "icon": "📜",
       "courses": [
         {
           "id": 301,
@@ -89,7 +86,6 @@
     {
       "id": 4,
       "subject": "Géographie",
-      "icon": "🌍",
       "courses": [
         {
           "id": 401,
@@ -117,7 +113,6 @@
     {
       "id": 5,
       "subject": "Français",
-      "icon": "📖",
       "courses": [
         {
           "id": 501,
@@ -145,7 +140,6 @@
     {
       "id": 6,
       "subject": "Anglais",
-      "icon": "🇬🇧",
       "courses": [
         {
           "id": 601,
@@ -173,7 +167,6 @@
     {
       "id": 7,
       "subject": "Espagnol",
-      "icon": "🇪🇸",
       "courses": [
         {
           "id": 701,
@@ -201,7 +194,6 @@
     {
       "id": 8,
       "subject": "SVT",
-      "icon": "🧬",
       "courses": [
         {
           "id": 801,

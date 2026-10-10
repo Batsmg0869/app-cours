@@ -2538,6 +2538,17 @@ input[type="color"]::-webkit-color-swatch {
     display: flex;
     flex-direction: column;
     align-items: center;
+    background: var(--bg-hover);
+}
+
+.pdf-toolbar {
+    background: var(--bg-card);
+    padding: 6px 12px;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border);
 }
 
 /* =====================================================
@@ -3646,4 +3657,247 @@ body[data-theme="default"] option {
     align-items: center;
     justify-content: flex-end;
     background: rgba(255, 255, 255, 0.02);
+}
+
+/* =====================================================
+   NOUVELLES FONCTIONNALITES - STYLES
+   ===================================================== */
+
+/* --- Programme du Jour --- */
+.home-today-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 10px;
+}
+
+.today-course-row {
+    background: var(--bg-card);
+    border-radius: var(--radius-sm);
+    padding: 12px 16px;
+    display: grid;
+    grid-template-columns: minmax(100px, auto) 1fr auto;
+    gap: 12px;
+    align-items: center;
+    border-left: 4px solid var(--primary);
+    box-shadow: var(--shadow-sm);
+    position: relative;
+    overflow: hidden;
+}
+
+.today-course-row.today-course--ongoing {
+    background: rgba(52, 211, 153, 0.08);
+    border-left-color: var(--success) !important;
+}
+
+.today-course-live {
+    position: absolute;
+    top: 0;
+    right: 0;
+    background: var(--success);
+    color: #fff;
+    font-size: 0.65rem;
+    padding: 2px 8px;
+    border-bottom-left-radius: 8px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    animation: pulseLive 2s infinite;
+}
+
+@keyframes pulseLive {
+    0% { opacity: 0.8; }
+    50% { opacity: 1; box-shadow: 0 0 8px rgba(52, 211, 153, 0.6); }
+    100% { opacity: 0.8; }
+}
+
+.today-course-row.today-course--past {
+    opacity: 0.5;
+    filter: grayscale(0.8);
+}
+
+.today-course-time {
+    font-size: 0.9rem;
+    color: var(--text-dim);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.today-course-subject {
+    font-weight: 600;
+    color: var(--text);
+    font-size: 1rem;
+}
+
+.today-course-room {
+    font-size: 0.85rem;
+    color: var(--primary);
+    background: var(--primary-soft);
+    padding: 4px 8px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* --- Filtres & Trimestres --- */
+.trim-selector {
+    display: flex;
+    background: var(--bg-input);
+    border-radius: var(--radius-md);
+    padding: 4px;
+    gap: 4px;
+}
+
+.btn-trim {
+    background: transparent;
+    border: none;
+    color: var(--text-dim);
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.btn-trim:hover {
+    color: var(--text);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.btn-trim.active {
+    background: var(--primary);
+    color: #fff;
+    box-shadow: var(--shadow-sm);
+}
+
+/* --- Simulateur de Notes --- */
+.simulator-current-avg {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--bg-card);
+    padding: 16px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+}
+
+.sim-label {
+    color: var(--text-dim);
+    font-size: 0.95rem;
+}
+
+.sim-value {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.simulator-result {
+    margin-top: 24px;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 20px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-light);
+    animation: fadeIn 0.3s ease;
+}
+
+.sim-result-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    font-size: 1.05rem;
+}
+
+.sim-result-value {
+    font-weight: 700;
+    font-size: 1.2rem;
+    color: var(--text);
+}
+
+.sim-result-delta {
+    font-weight: 700;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 2px 8px;
+    border-radius: 4px;
+}
+
+.sim-progress-wrap {
+    margin-top: 20px;
+    position: relative;
+}
+
+.sim-progress-bar {
+    height: 8px;
+    background: var(--bg-input);
+    border-radius: 4px;
+    position: relative;
+    overflow: hidden;
+}
+
+.sim-progress-fill {
+    position: absolute;
+    top: 0; left: 0; bottom: 0;
+    background: var(--primary);
+    width: 0%;
+    transition: width 0.6s var(--ease-out-back), background 0.3s;
+    border-radius: 4px;
+}
+
+.sim-progress-target {
+    position: absolute;
+    top: 0; bottom: 0;
+    width: 2px;
+    background: #fff;
+    box-shadow: 0 0 4px rgba(255,255,255,0.8);
+    z-index: 2;
+}
+
+.sim-progress-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 6px;
+}
+
+#sim-target-label {
+    color: #fff;
+    font-weight: 600;
+}
+
+/* --- Dropzone PDF --- */
+.dropzone {
+    border: 2px dashed var(--border-light);
+    border-radius: var(--radius-md);
+    padding: 24px;
+    text-align: center;
+    background: rgba(0, 0, 0, 0.15);
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.dropzone:hover, .dropzone:focus {
+    border-color: var(--primary);
+    background: rgba(129, 140, 248, 0.05);
+    outline: none;
+}
+
+.dropzone-icon {
+    font-size: 2rem;
+    color: var(--primary);
+    margin-bottom: 8px;
+}
+
+.dropzone-text {
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 4px;
+}
+
+.dropzone-hint {
+    font-size: 0.85rem;
+    color: var(--text-muted);
 }

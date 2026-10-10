@@ -177,7 +177,7 @@
                 <div class="logo-box" aria-hidden="true"><i class="ph-bold ph-student"></i></div>
                 <div class="sidebar-brand">
                     <h2>Planner</h2>
-                    <span class="sidebar-version clickable" id="sidebar-version-tag" title="Voir le Journal des nouveautés (Update Log)">v2.4.0 <i class="ph-bold ph-sparkle"></i></span>
+                    <span class="sidebar-version clickable" id="sidebar-version-tag" title="Voir le Journal des nouveautés (Update Log)">v2.5.0 <i class="ph-bold ph-sparkle"></i></span>
                 </div>
             </div>
 
@@ -318,6 +318,15 @@
                         </div>
                         <div id="home-tasks-preview" class="home-tasks-list"></div>
                     </div>
+
+                    <!-- PROGRAMME DU JOUR -->
+                    <div class="home-today-schedule" id="home-today-schedule-wrap">
+                        <div class="section-header-sm">
+                            <h3 class="section-title"><i class="ph ph-sun" aria-hidden="true"></i> Programme du Jour</h3>
+                            <button class="btn-text" id="btn-see-planning" onclick="switchSection('page-schedule')">Planning complet <i class="ph ph-arrow-right" aria-hidden="true"></i></button>
+                        </div>
+                        <div id="home-today-courses" class="home-today-list"></div>
+                    </div>
                 </section>
 
                 <!-- ========== PAGE : DEVOIRS ========== -->
@@ -335,6 +344,16 @@
                                 <option value="Haute">Haute</option>
                                 <option value="Normale">Normale</option>
                                 <option value="Basse">Basse</option>
+                            </select>
+                            <select class="filter-select" id="filter-subject" aria-label="Filtrer par matière">
+                                <option value="">Toutes matières</option>
+                            </select>
+                            <select class="filter-select" id="sort-tasks" aria-label="Trier les devoirs">
+                                <option value="priority-date">Priorité puis date</option>
+                                <option value="date-asc">Date croissante</option>
+                                <option value="date-desc">Date décroissante</option>
+                                <option value="subject">Par matière</option>
+                                <option value="alpha">Alphabétique</option>
                             </select>
                             <button class="btn btn-primary" id="btn-add-task">
                                 <i class="ph ph-plus" aria-hidden="true"></i> Nouveau devoir
@@ -357,10 +376,18 @@
                     aria-labelledby="courses-title">
                     <div class="section-header">
                         <h2 id="courses-title">Mes Cours</h2>
-                        <div class="search-bar">
-                            <i class="ph ph-magnifying-glass" aria-hidden="true"></i>
-                            <input type="text" id="search-courses" placeholder="Rechercher un cours…"
-                                aria-label="Rechercher un cours">
+                        <div class="section-header-actions">
+                            <div class="search-bar">
+                                <i class="ph ph-magnifying-glass" aria-hidden="true"></i>
+                                <input type="text" id="search-courses" placeholder="Rechercher un cours…"
+                                    aria-label="Rechercher un cours">
+                            </div>
+                            <button class="btn btn-secondary" id="btn-add-subject">
+                                <i class="ph ph-folder-plus" aria-hidden="true"></i> Nouvelle matière
+                            </button>
+                            <button class="btn btn-primary" id="btn-add-course-fiche">
+                                <i class="ph ph-file-plus" aria-hidden="true"></i> Nouveau cours
+                            </button>
                         </div>
                     </div>
                     <div id="courses-container" class="courses-container"></div>
@@ -415,9 +442,20 @@
                 <section id="page-grades" class="content-section" style="display:none;" aria-labelledby="grades-title">
                     <div class="section-header">
                         <h2 id="grades-title">Carnet de Notes</h2>
-                        <button class="btn btn-primary" id="btn-add-grade">
-                            <i class="ph ph-plus" aria-hidden="true"></i> Nouvelle Note
-                        </button>
+                        <div class="section-header-actions">
+                            <div class="trim-selector" role="group" aria-label="Filtre par trimestre">
+                                <button class="btn-trim active" data-trim="all">Tous</button>
+                                <button class="btn-trim" data-trim="T1">T1</button>
+                                <button class="btn-trim" data-trim="T2">T2</button>
+                                <button class="btn-trim" data-trim="T3">T3</button>
+                            </div>
+                            <button class="btn btn-secondary" id="btn-open-simulator" title="Simulateur de moyenne">
+                                <i class="ph ph-calculator" aria-hidden="true"></i> Simulateur
+                            </button>
+                            <button class="btn btn-primary" id="btn-add-grade">
+                                <i class="ph ph-plus" aria-hidden="true"></i> Nouvelle Note
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Bannière de statistiques -->
@@ -599,9 +637,14 @@
                                 </button>
                             </div>
                             <div id="update-status-msg" style="margin-top: 10px; font-size: 0.85rem; color: var(--text-muted); display: none;"></div>
-                            <button class="btn btn-primary" id="btn-install-update" style="display: none; margin-top: 10px;">
-                                <i class="ph ph-download" aria-hidden="true"></i> Installer et redémarrer
-                            </button>
+                            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                <button class="btn btn-primary" id="btn-install-update" style="display: none; margin-top: 10px;">
+                                    <i class="ph ph-download" aria-hidden="true"></i> Installer et redémarrer
+                                </button>
+                                <button class="btn btn-primary" id="btn-github-update" style="display: none; margin-top: 10px;">
+                                    <i class="ph ph-download-simple" aria-hidden="true"></i> Télécharger la mise à jour
+                                </button>
+                            </div>
 
                             <!-- Sélecteur de version spécifique -->
                             <div id="version-picker-box" style="display: none; margin-top: 15px; padding: 12px; background: rgba(255,255,255,0.05); border-radius: 8px; border: 1px solid var(--border-color);">
@@ -622,7 +665,7 @@
 
                         <div class="settings-card">
                             <h3><i class="ph ph-info" aria-hidden="true"></i> À propos</h3>
-                            <p class="settings-desc">HomeworkPlanner <strong>v2.4.0</strong> — Construit avec
+                            <p class="settings-desc">HomeworkPlanner <strong>v2.5.0</strong> — Construit avec
                                 Electron.<br>Développé par <strong>Baptiste Lecuyot</strong> (Batsmg0869).</p>
                         </div>
                     </div>
@@ -666,9 +709,9 @@
                         <div class="form-group">
                             <label for="in-priority">Priorité</label>
                             <select id="in-priority" required>
-                                <option value="Basse">🟢 Basse</option>
-                                <option value="Normale" selected>🔵 Normale</option>
-                                <option value="Haute">🔴 Haute</option>
+                                <option value="Basse">Basse</option>
+                                <option value="Normale" selected>Normale</option>
+                                <option value="Haute">Haute</option>
                             </select>
                         </div>
                     </div>
@@ -848,7 +891,19 @@
             <div class="pdf-header">
                 <div class="pdf-header-left">
                     <i class="ph ph-file-pdf" aria-hidden="true"></i>
-                    <h3 id="pdf-title">Lecture du document</h3>
+                    <h3 id="pdf-title" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 250px;">Lecture du document</h3>
+                </div>
+                <div class="pdf-toolbar" style="display: flex; align-items: center; gap: 8px;">
+                    <button class="btn-icon" id="pdf-zoom-out" title="Zoom Arrière"><i class="ph ph-magnifying-glass-minus"></i></button>
+                    <span id="pdf-zoom-level" style="min-width: 50px; text-align: center;">130%</span>
+                    <button class="btn-icon" id="pdf-zoom-in" title="Zoom Avant"><i class="ph ph-magnifying-glass-plus"></i></button>
+                    <button class="btn-icon" id="pdf-zoom-reset" title="Ajuster à la largeur"><i class="ph ph-arrows-out-line-horizontal"></i></button>
+                    <div class="pdf-toolbar-separator" style="width: 1px; height: 24px; background: var(--border); margin: 0 8px;"></div>
+                    <button class="btn-icon" id="pdf-prev" title="Page Précédente"><i class="ph ph-caret-up"></i></button>
+                    <span id="pdf-page-info" style="min-width: 50px; text-align: center;"><span id="pdf-page-num">1</span> / <span id="pdf-page-count">1</span></span>
+                    <button class="btn-icon" id="pdf-next" title="Page Suivante"><i class="ph ph-caret-down"></i></button>
+                    <div class="pdf-toolbar-separator" style="width: 1px; height: 24px; background: var(--border); margin: 0 8px;"></div>
+                    <button class="btn-icon" id="pdf-download" title="Ouvrir / Télécharger le fichier"><i class="ph ph-download-simple"></i></button>
                 </div>
                 <button id="btn-close-pdf" class="btn-icon" aria-label="Fermer"><i class="ph ph-x"></i></button>
             </div>
@@ -867,7 +922,7 @@
                     <div>
                         <div class="update-log-badge-wrap">
                             <h3 id="update-log-title">Journal des nouveautés</h3>
-                            <span class="update-log-version-pill">v2.4.0</span>
+                            <span class="update-log-version-pill">v2.5.0</span>
                         </div>
                         <p class="update-log-subtitle">Nouvelles fonctionnalités & projets en cours de développement</p>
                     </div>
@@ -905,87 +960,87 @@
                     </div>
                 </div>
 
-                <!-- Section Version 2.4.0 (Actuelle) -->
+                <!-- Section Version 2.5.0 (Actuelle) -->
                 <div class="update-log-section section-current">
                     <div class="update-log-section-header">
-                        <span class="update-tag tag-current"><i class="ph-bold ph-check-circle"></i> Version 2.4.0 — Nouveautés</span>
+                        <span class="update-tag tag-current"><i class="ph-bold ph-check-circle"></i> Version 2.5.0 — Nouveautés majeures</span>
                         <span class="update-tag-hint">Version installée</span>
                     </div>
                     <div class="update-items-list">
                         <div class="update-item">
-                            <div class="update-item-icon color-update">
-                                <i class="ph-bold ph-gauge"></i>
+                            <div class="update-item-icon color-tutorial">
+                                <i class="ph-bold ph-books"></i>
                             </div>
                             <div class="update-item-content">
-                                <h4>Priorité élevée au démarrage sous Windows</h4>
-                                <p>Active cette option dans les <b>Paramètres</b> pour lancer HomeworkPlanner avec une priorité supérieure à la normale. Ton choix est conservé pour les prochains démarrages.</p>
-                            </div>
-                        </div>
-
-                        <div class="update-item">
-                            <div class="update-item-icon color-update">
-                                <i class="ph-bold ph-arrows-clockwise"></i>
-                            </div>
-                            <div class="update-item-content">
-                                <h4>Mises à jour automatiques en 1 clic & Sélecteur de version</h4>
-                                <p>Plus besoin de retélécharger un installateur manuel ! L'application recherche les mises à jour en fond, les télécharge et s'installe d'un simple clic. Un sélecteur permet aussi de choisir et basculer sur une version spécifique depuis GitHub.</p>
+                                <h4>Gestion personnalisée des Cours & Fiches PDF</h4>
+                                <p>Crée tes matières avec code couleur personnalisé, structure tes chapitres et importe tes fiches de révision en PDF pour les consulter directement dans le lecteur intégré.</p>
                             </div>
                         </div>
 
                         <div class="update-item">
                             <div class="update-item-icon color-online">
-                                <i class="ph-bold ph-wifi-high"></i>
+                                <i class="ph-bold ph-calendar-check"></i>
                             </div>
                             <div class="update-item-content">
-                                <h4>Indicateur de connexion En ligne / Hors ligne</h4>
-                                <p>Détection en temps réel de votre connexion Internet dans la barre latérale. La pastille passe en vert pulsant en ligne et en rouge hors-ligne, avec blocage intelligent des requêtes impossibles sans réseau.</p>
+                                <h4>Affichage du « Programme du Jour » sur l'Accueil</h4>
+                                <p>Suis en direct ton planning de la journée depuis la page d'accueil : aperçu immédiat des cours du jour, devoirs à rendre et barre de progression dynamique.</p>
                             </div>
                         </div>
 
                         <div class="update-item">
-                            <div class="update-item-icon color-tutorial">
-                                <i class="ph-bold ph-graduation-cap"></i>
+                            <div class="update-item-icon color-update">
+                                <i class="ph-bold ph-calculator"></i>
                             </div>
                             <div class="update-item-content">
-                                <h4>Tutoriel interactif & Personnalisation du prénom</h4>
-                                <p>Guide d'accueil animé et interactif lors du tout premier démarrage de l'application pour saisir ton prénom et découvrir toutes les fonctionnalités clés.</p>
+                                <h4>Gestion par Trimestres / Semestres & Simulateur de notes</h4>
+                                <p>Découpe tes résultats par période (T1/T2/T3 ou S1/S2) avec calcul automatique des moyennes pondérées par coefficients. Un simulateur interactif te permet d'anticiper la note minimale à obtenir pour atteindre ton objectif.</p>
                             </div>
                         </div>
 
                         <div class="update-item">
                             <div class="update-item-icon color-replay">
-                                <i class="ph-bold ph-arrow-counter-clockwise"></i>
+                                <i class="ph-bold ph-bell-ringing"></i>
                             </div>
                             <div class="update-item-content">
-                                <h4>Bouton « Revoir le tutoriel »</h4>
-                                <p>Tu peux relancer la visite guidée à n'importe quel moment depuis les <b>Paramètres</b> en un clic.</p>
+                                <h4>Notifications de rappel intelligentes & discrètes</h4>
+                                <p>Reçois des alertes ciblées pour les devoirs urgents (échéance sous 24h) et les priorités hautes. Aucun spam ni notification parasite lorsqu'aucun devoir n'est en attente.</p>
                             </div>
                         </div>
 
                         <div class="update-item">
                             <div class="update-item-icon color-theme">
-                                <i class="ph-bold ph-sparkle"></i>
+                                <i class="ph-bold ph-funnel"></i>
                             </div>
                             <div class="update-item-content">
-                                <h4>Affichage instantané de l'Accueil & Netteté du texte</h4>
-                                <p>Ouverture immédiate sur l'Accueil complet au lancement de l'application, et correction du flou de police au survol des cartes et rectangles.</p>
+                                <h4>Tri et filtres avancés des devoirs</h4>
+                                <p>Organise et classe tes devoirs en 1 clic selon l'échéance, la priorité, la matière ou le statut (à faire / terminés) avec barre de recherche instantanée.</p>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Section Historique v2.2 -->
+                <!-- Section Historique v2.4 & versions antérieures -->
                 <div class="update-log-section section-past">
                     <div class="update-log-section-header">
-                        <span class="update-tag tag-past"><i class="ph-bold ph-archive"></i> Versions antérieures (v2.2)</span>
+                        <span class="update-tag tag-past"><i class="ph-bold ph-archive"></i> Versions antérieures (v2.4 & antérieures)</span>
                     </div>
                     <div class="update-items-list">
+                        <div class="update-item past">
+                            <div class="update-item-icon color-update">
+                                <i class="ph-bold ph-gauge"></i>
+                            </div>
+                            <div class="update-item-content">
+                                <h4>Priorité Windows & Mises à jour 1-clic (v2.4.0)</h4>
+                                <p>Priorité élevée au démarrage sous Windows, recherche & installation automatique des mises à jour depuis GitHub, indicateur réseau en direct et tutoriel interactif.</p>
+                            </div>
+                        </div>
+
                         <div class="update-item past">
                             <div class="update-item-icon color-theme">
                                 <i class="ph-bold ph-paint-brush"></i>
                             </div>
                             <div class="update-item-content">
-                                <h4>Personnalisation de thèmes & Police Minecraft</h4>
+                                <h4>Personnalisation de thèmes & Police Minecraft (v2.2)</h4>
                                 <p>Support complet des thèmes sombres/lumineux, couleurs d'accentuation sur-mesure et typographie Minecraft.</p>
                             </div>
                         </div>
@@ -997,6 +1052,142 @@
                 <button type="button" class="btn btn-primary" id="btn-ack-update-log">
                     <i class="ph-bold ph-check"></i> Compris !
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Ajouter une Matière (Cours) -->
+    <div id="modal-subject" class="modal" role="dialog" aria-modal="true" aria-labelledby="subject-modal-title">
+        <div class="side-panel">
+            <div class="side-panel-header">
+                <h3 id="subject-modal-title">Nouvelle Matière</h3>
+                <button type="button" class="btn-icon" id="btn-close-subject" aria-label="Fermer"><i class="ph ph-x"></i></button>
+            </div>
+            <div class="side-panel-content">
+                <form id="form-subject" novalidate>
+                    <div class="form-group">
+                        <label for="subj-name">Nom de la matière</label>
+                        <input type="text" id="subj-name" placeholder="Ex: Mathématiques" required autocomplete="off">
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary w-full">
+                            <i class="ph ph-folder-plus" aria-hidden="true"></i> Créer la matière
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Ajouter un Cours Personnalisé -->
+    <div id="modal-course-fiche" class="modal" role="dialog" aria-modal="true" aria-labelledby="course-fiche-title">
+        <div class="side-panel">
+            <div class="side-panel-header">
+                <h3 id="course-fiche-title">Nouveau Cours / Fiche</h3>
+                <button type="button" class="btn-icon" id="btn-close-course-fiche" aria-label="Fermer"><i class="ph ph-x"></i></button>
+            </div>
+            <div class="side-panel-content">
+                <form id="form-course-fiche" novalidate>
+                    <div class="form-group">
+                        <label for="cf-subject">Matière</label>
+                        <select id="cf-subject" required>
+                            <option value="">-- Choisir une matière --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="cf-title">Titre du cours</label>
+                        <input type="text" id="cf-title" placeholder="Ex: Les équations du second degré" required autocomplete="off">
+                    </div>
+                    <div class="form-group">
+                        <label for="cf-description">Description <span class="label-hint">(optionnel)</span></label>
+                        <textarea id="cf-description" rows="2" placeholder="Résumé ou notes..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="cf-date">Date <span class="label-hint">(optionnel)</span></label>
+                        <input type="date" id="cf-date">
+                    </div>
+                    <div class="form-group">
+                        <label for="cf-trim">Trimestre</label>
+                        <select id="cf-trim">
+                            <option value="">-- Aucun --</option>
+                            <option value="T1">Trimestre 1</option>
+                            <option value="T2">Trimestre 2</option>
+                            <option value="T3">Trimestre 3</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Fichier PDF <span class="label-hint">(optionnel)</span></label>
+                        <div id="cf-dropzone" class="dropzone" role="button" tabindex="0" aria-label="Zone de glisser-déposer de PDF">
+                            <i class="ph ph-file-pdf dropzone-icon" aria-hidden="true"></i>
+                            <p class="dropzone-text">Glissez votre PDF ici</p>
+                            <p class="dropzone-hint">ou cliquez pour parcourir</p>
+                            <input type="file" id="cf-pdf-input" accept=".pdf" style="display: none;">
+                        </div>
+                        <div id="cf-pdf-name" style="margin-top: 8px; font-size: 0.85rem; color: var(--text-muted);"></div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary w-full">
+                            <i class="ph ph-check" aria-hidden="true"></i> Enregistrer le cours
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Simulateur de Moyenne -->
+    <div id="modal-simulator" class="modal" role="dialog" aria-modal="true" aria-labelledby="simulator-title">
+        <div class="side-panel">
+            <div class="side-panel-header">
+                <h3 id="simulator-title"><i class="ph ph-calculator"></i> Simulateur de Moyenne</h3>
+                <button type="button" class="btn-icon" id="btn-close-simulator" aria-label="Fermer"><i class="ph ph-x"></i></button>
+            </div>
+            <div class="side-panel-content">
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 20px;">
+                    Simule l'impact d'une prochaine note sur ta moyenne générale.
+                </p>
+                <div class="simulator-current-avg" id="sim-current-avg-wrap">
+                    <span class="sim-label">Moyenne actuelle :</span>
+                    <span class="sim-value" id="sim-current-avg">--/20</span>
+                </div>
+                <div class="form-group" style="margin-top: 20px;">
+                    <label for="sim-grade-value">Note simulée <span class="label-hint">(sur 20)</span></label>
+                    <input type="number" id="sim-grade-value" placeholder="Ex: 15" min="0" max="20" step="0.5">
+                </div>
+                <div class="form-group">
+                    <label for="sim-grade-coef">Coefficient</label>
+                    <input type="number" id="sim-grade-coef" placeholder="1" min="0.5" step="0.5" value="1">
+                </div>
+                <div class="form-group">
+                    <label for="sim-grade-subject">Matière <span class="label-hint">(optionnel)</span></label>
+                    <input type="text" id="sim-grade-subject" placeholder="Ex: Mathématiques" autocomplete="off">
+                </div>
+                <div class="simulator-result" id="simulator-result" style="display: none;">
+                    <div class="sim-result-row">
+                        <span>Nouvelle moyenne :</span>
+                        <span class="sim-result-value" id="sim-new-avg">--</span>
+                    </div>
+                    <div class="sim-result-row">
+                        <span>Évolution :</span>
+                        <span class="sim-result-delta" id="sim-delta">--</span>
+                    </div>
+                    <div class="sim-progress-wrap">
+                        <div class="sim-progress-bar">
+                            <div class="sim-progress-fill" id="sim-progress-fill"></div>
+                            <div class="sim-progress-target" id="sim-progress-target"></div>
+                        </div>
+                        <div class="sim-progress-labels">
+                            <span>0</span>
+                            <span id="sim-target-label">Objectif</span>
+                            <span>20</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-actions" style="margin-top: 24px;">
+                    <button type="button" class="btn btn-primary w-full" id="btn-run-simulator">
+                        <i class="ph ph-play" aria-hidden="true"></i> Calculer
+                    </button>
+                </div>
             </div>
         </div>
     </div>
