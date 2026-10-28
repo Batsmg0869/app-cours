@@ -633,18 +633,18 @@ window.addEventListener('DOMContentLoaded', async () => {
   const btnEmptyGrade = document.getElementById('btn-add-grade-empty');
   if (btnEmptyGrade) btnEmptyGrade.onclick = () => document.getElementById('btn-add-grade').click();
 
-  // Search & Filter Listeners
+  // Search & Filter Listeners (avec debounce pour la fluidité)
   const searchTasks = document.getElementById('search-tasks');
   const filterPrio = document.getElementById('filter-priority');
   const filterSubject = document.getElementById('filter-subject');
   const sortTasks = document.getElementById('sort-tasks');
-  if (searchTasks) searchTasks.addEventListener('input', renderTasks);
+  if (searchTasks) searchTasks.addEventListener('input', debounce(renderTasks, 150));
   if (filterPrio) filterPrio.addEventListener('change', renderTasks);
   if (filterSubject) filterSubject.addEventListener('change', renderTasks);
   if (sortTasks) sortTasks.addEventListener('change', renderTasks);
 
   const searchCourses = document.getElementById('search-courses');
-  if (searchCourses) searchCourses.addEventListener('input', renderCourses);
+  if (searchCourses) searchCourses.addEventListener('input', debounce(renderCourses, 150));
 
   // Quotes
   const quotes = [
@@ -751,6 +751,26 @@ async function saveData() {
     settings: { customTheme: customTheme, highPriority: highPriority }
   });
   console.log("[Stockage] ✓ Sauvegarde réussie des tâches, cours et paramètres.");
+}
+
+// Utilitaires de performance : Debounce & Debounced Save
+function debounce(fn, delay = 200) {
+  let timer = null;
+  return function(...args) {
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(() => fn.apply(this, args), delay);
+  };
+}
+
+let _saveDataTimer = null;
+function debouncedSaveData(delay = 350) {
+  if (_saveDataTimer) clearTimeout(_saveDataTimer);
+  return new Promise(resolve => {
+    _saveDataTimer = setTimeout(async () => {
+      await saveData();
+      resolve();
+    }, delay);
+  });
 }
 
 // =====================================================
@@ -1002,6 +1022,9 @@ function closeModal(modalEl) {
   if (modalEl._closeTimeout) {
     clearTimeout(modalEl._closeTimeout);
   }
+  if (modalEl.id === 'modal-pdf' && typeof cleanUpPdfViewer === 'function') {
+    cleanUpPdfViewer();
+  }
   modalEl.classList.add('is-closing');
   // Attendre la fin de l'animation CSS avant de masquer l'élément
   const dur = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--dur-normal')) || 250;
@@ -1135,16 +1158,17 @@ function renderTasks() {
     container.style.display = 'grid';
   }
 
-  // Tri avancé
+  // Tri avancé optimisé (Date.parse sans allocation d'objets Date)
   const priorityOrder = { 'Haute': 0, 'Normale': 1, 'Basse': 2 };
+  const fragment = document.createDocumentFragment();
 
   filteredTasks.sort((a, b) => {
     if (a.completed !== b.completed) return a.completed ? 1 : -1;
     switch (sortMode) {
       case 'date-asc':
-        return new Date(`${a.date}T${a.time || '00:00'}`) - new Date(`${b.date}T${b.time || '00:00'}`);
+        return (Date.parse(`${a.date}T${a.time || '00:00'}`) || 0) - (Date.parse(`${b.date}T${b.time || '00:00'}`) || 0);
       case 'date-desc':
-        return new Date(`${b.date}T${b.time || '00:00'}`) - new Date(`${a.date}T${a.time || '00:00'}`);
+        return (Date.parse(`${b.date}T${b.time || '00:00'}`) || 0) - (Date.parse(`${a.date}T${a.time || '00:00'}`) || 0);
       case 'subject':
         return (a.subject || '').localeCompare(b.subject || '');
       case 'alpha':
@@ -1154,7 +1178,7 @@ function renderTasks() {
         const pA = priorityOrder[a.priority || 'Normale'];
         const pB = priorityOrder[b.priority || 'Normale'];
         if (pA !== pB) return pA - pB;
-        return new Date(`${a.date}T${a.time}`) - new Date(`${b.date}T${b.time}`);
+        return (Date.parse(`${a.date}T${a.time || '00:00'}`) || 0) - (Date.parse(`${b.date}T${b.time || '00:00'}`) || 0);
       }
     }
   })
@@ -1254,8 +1278,9 @@ function renderTasks() {
           }
         };
       });
-      container.appendChild(div);
+      fragment.appendChild(div);
     });
+  container.appendChild(fragment);
 }
 
 window.toggleSubtask = async (taskId, subtaskIndex) => {
@@ -1274,27 +1299,48 @@ let currentPdfScale = 1.3;
 let currentPdfPath = '';
 let pdfPageObserver = null;
 
-function openPDF(pdfPath) {
+function cleanUpPdfViewer() {
+  if (pdfPageObserver) {
+    try { pdfPageObserver.disconnect(); } catch (_) {}
+    pdfPageObserver = null;
+  }
+  if (pdfDoc) {
+    try { pdfDoc.destroy(); } catch (_) {}
+    pdfDoc = null;
+  }
+  const pdfViewer = document.getElementById('pdf-viewer');
+  if (pdfViewer) {
+    pdfViewer.querySelectorAll('canvas').forEach(canvas => {
+      canvas.width = 0;
+      canvas.height = 0;
+    });
+    pdfViewer.innerHTML = '';
+  }
+}
+
+function openPDF(pdfPath, title) {
+  if (!pdfPath) {
+    showToast("Aucun fichier PDF spécifié.", "warning");
+    return;
+  }
+  cleanUpPdfViewer();
   const pdfModal = document.getElementById('modal-pdf');
   const pdfViewer = document.getElementById('pdf-viewer');
   const pdfTitle = document.getElementById('pdf-title');
 
-  const folderPath = 'Cours/' + pdfPath;
-  const fileName = pdfPath.split('/').pop();
-  currentPdfPath = folderPath;
+  currentPdfPath = pdfPath;
   currentPdfScale = 1.3;
   updatePdfToolbarScale();
 
-  console.log('Ouverture du PDF :', folderPath);
+  const fileName = title || pdfPath.split(/[/\\]/).pop();
+  console.log('Ouverture du PDF :', pdfPath);
 
   // Configuration du bouton de téléchargement / ouverture
   const btnDownload = document.getElementById('pdf-download');
   if (btnDownload) {
     btnDownload.onclick = () => {
-      if(window.storage && window.storage.openAttachment) {
-         showToast("Ouverture du fichier...", "info");
-         window.storage.openAttachment(folderPath);
-      }
+      showToast("Ouverture avec l'application par défaut...", "info");
+      window.storage.openPDF(pdfPath);
     };
   }
 
@@ -1303,16 +1349,18 @@ function openPDF(pdfPath) {
   document.getElementById('pdf-zoom-out').onclick = () => updatePdfScale(-0.2);
   document.getElementById('pdf-zoom-reset').onclick = () => { currentPdfScale = 1.0; updatePdfScale(0); };
 
+  pdfTitle.textContent = fileName;
+  pdfTitle.title = fileName;
+  pdfViewer.innerHTML = '<div style="text-align:center; color:var(--text-dim); padding:40px;"><i class="ph ph-spinner ph-spin" style="font-size:2rem;"></i><p style="margin-top:10px;">Chargement du document PDF...</p></div>';
+  openModal(pdfModal);
+
   // Récupérer le PDF via IPC
-  window.storage.loadPDF(folderPath).then(base64Data => {
+  window.storage.loadPDF(pdfPath).then(base64Data => {
     if (!base64Data) {
-      alert('Impossible d\'ouvrir le fichier PDF. Vérifiez que le fichier existe.');
+      alert('Impossible d\'ouvrir le fichier PDF. Vérifiez que le fichier existe toujours sur votre appareil.');
+      closeModal(pdfModal);
       return;
     }
-
-    pdfTitle.textContent = fileName;
-    pdfTitle.title = fileName;
-    pdfViewer.innerHTML = '<div style="text-align:center; color:var(--text-dim); padding:20px;">📄 Chargement du PDF...</div>';
 
     // Convertir base64 en Uint8Array
     const binaryString = atob(base64Data);
@@ -1660,100 +1708,175 @@ function updateSidebarBadges() {
 function renderCourses() {
   const container = document.getElementById('courses-container');
   if (!container) return;
-  console.log('renderCourses appelé, coursesList:', coursesList);
   container.innerHTML = '';
 
   const searchTerm = (document.getElementById('search-courses')?.value || '').toLowerCase();
 
   if (!coursesList || coursesList.length === 0) {
-    container.innerHTML = '<p style="color: var(--text-dim);">Aucun cours disponible</p>';
+    container.innerHTML = '<p style="color: var(--text-dim); text-align: center; padding: 40px;">Aucune matière disponible. Créez-en une avec le bouton « Nouvelle matière » ci-dessus.</p>';
     return;
   }
 
   // Filtrer les cours par recherche
   const filteredCoursesList = coursesList.map(subject => ({
     ...subject,
-    courses: subject.courses.filter(c =>
+    courses: (subject.courses || []).filter(c =>
       c.title.toLowerCase().includes(searchTerm) ||
-      c.description.toLowerCase().includes(searchTerm) ||
+      (c.description && c.description.toLowerCase().includes(searchTerm)) ||
       subject.subject.toLowerCase().includes(searchTerm)
     )
-  })).filter(subject => subject.courses.length > 0);
+  })).filter(subject => subject.courses.length > 0 || !searchTerm);
 
   if (filteredCoursesList.length === 0) {
     container.innerHTML = '<p style="color: var(--text-dim); padding: 40px; text-align: center;">Aucun cours trouvé pour cette recherche.</p>';
     return;
   }
 
+  const fragment = document.createDocumentFragment();
+
   filteredCoursesList.forEach(subject => {
     const subjectDiv = document.createElement('div');
     subjectDiv.className = 'subject-section';
-    subjectDiv.innerHTML = `<h3><i class="ph ph-folder"></i> ${subject.subject}</h3>`;
+    subjectDiv.innerHTML = `
+      <div class="subject-header">
+        <h3><i class="ph ph-folder"></i> ${subject.subject}</h3>
+        <button type="button" class="btn-icon danger btn-delete-subject" title="Supprimer la matière « ${subject.subject} »" aria-label="Supprimer la matière">
+          <i class="ph ph-trash"></i>
+        </button>
+      </div>
+    `;
+
+    // Suppression d'une matière
+    const delSubjBtn = subjectDiv.querySelector('.btn-delete-subject');
+    if (delSubjBtn) {
+      delSubjBtn.onclick = async () => {
+        const count = (subject.courses || []).length;
+        const msg = count > 0 
+          ? `Supprimer la matière « ${subject.subject} » ainsi que ses ${count} cours ?`
+          : `Supprimer la matière « ${subject.subject} » ?`;
+        if (confirm(msg)) {
+          coursesList = coursesList.filter(s => s.id !== subject.id);
+          await saveData();
+          renderCourses();
+          showToast(`Matière « ${subject.subject} » supprimée.`, 'info');
+        }
+      };
+    }
 
     const coursesGrid = document.createElement('div');
     coursesGrid.className = 'courses-grid';
 
-    subject.courses.forEach(course => {
-      const courseCard = document.createElement('div');
-      courseCard.className = 'course-item-card';
-      courseCard.innerHTML = `
-                <div class="course-card-header">
-                    <h4>${course.title}</h4>
-                </div>
-                <div class="course-card-body">
-                    <p>${course.description}</p>
-                    <small><i class="ph ph-calendar-blank"></i> ${course.date}</small>
-                </div>
-                <div class="course-card-footer">
-                    <a href="#" class="btn btn-primary btn-small btn-open-pdf" data-pdf="${course.pdf}">
-                        <i class="ph ph-file-pdf"></i> Ouvrir PDF
-                    </a>
-                    <a href="#" class="btn btn-secondary btn-small" onclick="downloadPDFFile('Cours/${course.pdf}'); return false;">
-                        <i class="ph ph-download-simple"></i>
-                    </a>
-                </div>
-            `;
-      coursesGrid.appendChild(courseCard);
-    });
+    if (!subject.courses || subject.courses.length === 0) {
+      coursesGrid.innerHTML = '<p style="color: var(--text-muted); font-size: 0.9rem; font-style: italic; padding: 10px 0;">Aucun cours dans cette matière pour le moment.</p>';
+    } else {
+      subject.courses.forEach(course => {
+        const courseCard = document.createElement('div');
+        courseCard.className = 'course-item-card';
+        const pdfFile = course.pdf || course.attachmentPath;
+        const hasPdf = Boolean(pdfFile);
+
+        courseCard.innerHTML = `
+          <div class="course-card-header">
+            <h4>${course.title}</h4>
+            <div class="course-card-top-actions">
+              <button type="button" class="btn-icon danger btn-delete-course" title="Supprimer ce cours" aria-label="Supprimer ce cours">
+                <i class="ph ph-trash"></i>
+              </button>
+            </div>
+          </div>
+          <div class="course-card-body">
+            <p>${course.description || course.title}</p>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
+              <small><i class="ph ph-calendar-blank"></i> ${course.date || 'Sans date'}</small>
+              ${course.trim ? `<span class="badge-type" style="font-size:0.75rem;">${course.trim}</span>` : ''}
+            </div>
+          </div>
+          <div class="course-card-footer">
+            ${hasPdf ? `
+              <button type="button" class="btn btn-primary btn-small btn-open-pdf" title="Ouvrir le cours">
+                <i class="ph ph-file-pdf"></i> Ouvrir PDF
+              </button>
+              <button type="button" class="btn btn-secondary btn-small btn-dl-pdf" title="Télécharger le fichier">
+                <i class="ph ph-download-simple"></i>
+              </button>
+            ` : `
+              <span class="no-pdf-hint"><i class="ph ph-file-dashed"></i> Aucun fichier joint</span>
+            `}
+          </div>
+        `;
+
+        // Suppression de cours avec animation
+        const btnDelCourse = courseCard.querySelector('.btn-delete-course');
+        if (btnDelCourse) {
+          btnDelCourse.onclick = async () => {
+            if (confirm(`Supprimer le cours « ${course.title} » ?`)) {
+              courseCard.style.animation = 'cardExit 0.25s ease forwards';
+              setTimeout(async () => {
+                const targetSubj = coursesList.find(s => s.id === subject.id);
+                if (targetSubj) {
+                  targetSubj.courses = targetSubj.courses.filter(c => c.id !== course.id);
+                  await saveData();
+                  renderCourses();
+                  showToast(`Cours « ${course.title} » supprimé !`, 'success');
+                }
+              }, 200);
+            }
+          };
+        }
+
+        // Ouvrir PDF
+        const btnOpen = courseCard.querySelector('.btn-open-pdf');
+        if (btnOpen) {
+          btnOpen.onclick = (e) => {
+            e.preventDefault();
+            handlePDFClick(pdfFile, course.title);
+          };
+        }
+
+        // Télécharger PDF
+        const btnDl = courseCard.querySelector('.btn-dl-pdf');
+        if (btnDl) {
+          btnDl.onclick = (e) => {
+            e.preventDefault();
+            downloadPDFFile(pdfFile);
+          };
+        }
+
+        coursesGrid.appendChild(courseCard);
+      });
+    }
 
     subjectDiv.appendChild(coursesGrid);
-    container.appendChild(subjectDiv);
+    fragment.appendChild(subjectDiv);
   });
-
-  // Ajouter les événements pour les boutons "Ouvrir PDF"
-  document.querySelectorAll('.btn-open-pdf').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      e.preventDefault();
-      const pdfPath = btn.getAttribute('data-pdf');
-      handlePDFClick(pdfPath);
-    });
-  });
+  container.appendChild(fragment);
 }
 
 // Fonction pour gérer le clic sur "Ouvrir PDF" avec choix
-function handlePDFClick(pdfPath) {
-  // Créer une boîte de dialogue personnalisée
+function handlePDFClick(pdfPath, title) {
+  if (!pdfPath) {
+    showToast("Aucun fichier PDF n'est associé à ce cours.", "warning");
+    return;
+  }
   const choice = confirm(
     "Comment voulez-vous ouvrir ce PDF ?\n\n" +
     "✅ OK = Ouvrir dans la visionneuse intégrée\n" +
-    "❌ Annuler = Ouvrir avec l'application par défaut"
+    "❌ Annuler = Ouvrir avec l'application par défaut de votre système"
   );
 
   if (choice) {
-    // Ouvrir dans la visionneuse intégrée
-    openPDF(pdfPath);
+    openPDF(pdfPath, title);
   } else {
-    // Ouvrir avec l'application externe
-    openExternalPDF('Cours/' + pdfPath);
+    openExternalPDF(pdfPath);
   }
 }
 
 // Ouvre le PDF avec l'application par défaut et gère l'erreur
 function openExternalPDF(pdfPath) {
+  if (!pdfPath) return;
   window.storage.openPDF(pdfPath).then(result => {
     if (!result) {
-      // Si l'ouverture échoue, proposer le téléchargement
-      const response = confirm("Impossible d'ouvrir le PDF. Voulez-vous le télécharger dans votre dossier 'Téléchargements' ?");
+      const response = confirm("Impossible d'ouvrir le PDF avec l'application par défaut. Voulez-vous le télécharger dans votre dossier 'Téléchargements' ?");
       if (response) {
         downloadPDFFile(pdfPath);
       }
@@ -1766,9 +1889,10 @@ function openExternalPDF(pdfPath) {
 
 // Télécharge le PDF dans le dossier Téléchargements
 function downloadPDFFile(pdfPath) {
+  if (!pdfPath) return;
   window.storage.downloadPDF(pdfPath).then(result => {
     if (result.success) {
-      alert("✓ PDF téléchargé avec succès !\n" + result.message);
+      showToast("✓ PDF téléchargé dans vos Téléchargements !", "success");
     } else {
       alert("✗ Erreur : " + result.message);
     }
@@ -1804,7 +1928,7 @@ document.getElementById('btn-high-priority').addEventListener('click', async () 
 document.getElementById('setting-username').addEventListener('input', (e) => {
   userName = e.target.value;
   updateUserName(userName);
-  saveData();
+  debouncedSaveData(400);
 });
 
 document.getElementById('setting-theme').addEventListener('change', (e) => {
@@ -1853,7 +1977,7 @@ function applyTheme(theme) {
       if (appTheme === 'custom') {
         applyTheme('custom');
       }
-      saveData();
+      debouncedSaveData(300);
     });
   }
 });
@@ -2118,43 +2242,56 @@ let chartCompletionInstance = null;
 function renderDashboard() {
   if (typeof Chart === 'undefined') return;
 
+  const canvasSub = document.getElementById('chart-subjects');
+  const canvasComp = document.getElementById('chart-completion');
+  if (!canvasSub || !canvasComp) return;
+
   const subjects = {};
   taskList.forEach(t => {
-    subjects[t.subject] = (subjects[t.subject] || 0) + 1;
+    if (t.subject) subjects[t.subject] = (subjects[t.subject] || 0) + 1;
   });
 
-  const ctxSub = document.getElementById('chart-subjects').getContext('2d');
-  if (chartSubjectsInstance) chartSubjectsInstance.destroy();
-  chartSubjectsInstance = new Chart(ctxSub, {
-    type: 'pie',
-    data: {
-      labels: Object.keys(subjects),
-      datasets: [{
-        data: Object.values(subjects),
-        backgroundColor: ['#818cf8', '#c084fc', '#34d399', '#fb7185', '#60a5fa']
-      }]
-    },
-    options: { responsive: true, plugins: { legend: { labels: { color: 'white' } } } }
-  });
+  const subLabels = Object.keys(subjects);
+  const subData = Object.values(subjects);
+
+  if (chartSubjectsInstance) {
+    chartSubjectsInstance.data.labels = subLabels;
+    chartSubjectsInstance.data.datasets[0].data = subData;
+    chartSubjectsInstance.update('none');
+  } else {
+    chartSubjectsInstance = new Chart(canvasSub.getContext('2d'), {
+      type: 'pie',
+      data: {
+        labels: subLabels,
+        datasets: [{
+          data: subData,
+          backgroundColor: ['#818cf8', '#c084fc', '#34d399', '#fb7185', '#60a5fa']
+        }]
+      },
+      options: { responsive: true, plugins: { legend: { labels: { color: 'white' } } } }
+    });
+  }
 
   const completed = archiveList.length;
   const pending = taskList.length;
 
-  const ctxComp = document.getElementById('chart-completion').getContext('2d');
-  if (chartCompletionInstance) chartCompletionInstance.destroy();
-  chartCompletionInstance = new Chart(ctxComp, {
-    type: 'doughnut',
-    data: {
-      labels: ['Terminé (Archivé)', 'À faire'],
-      datasets: [{
-        data: [completed, pending],
-        backgroundColor: ['#34d399', '#fb7185']
-      }]
-    },
-    options: { responsive: true, plugins: { legend: { labels: { color: 'white' } } } }
-  });
+  if (chartCompletionInstance) {
+    chartCompletionInstance.data.datasets[0].data = [completed, pending];
+    chartCompletionInstance.update('none');
+  } else {
+    chartCompletionInstance = new Chart(canvasComp.getContext('2d'), {
+      type: 'doughnut',
+      data: {
+        labels: ['Terminé (Archivé)', 'À faire'],
+        datasets: [{
+          data: [completed, pending],
+          backgroundColor: ['#34d399', '#fb7185']
+        }]
+      },
+      options: { responsive: true, plugins: { legend: { labels: { color: 'white' } } } }
+    });
+  }
 }
-
 
 // ==========================================
 // CARNET DE NOTES
@@ -2176,194 +2313,10 @@ document.getElementById('btn-add-grade').onclick = () => {
 // Fermer le modal
 document.getElementById('btn-close-grade-modal').onclick = () => closeModal(gradeModal);
 
-// Soumission du formulaire
-gradeForm.onsubmit = async (e) => {
-  e.preventDefault();
-
-  const subject = document.getElementById('grade-subject').value.trim();
-  const grade = parseFloat(document.getElementById('grade-value').value);
-  const coef = parseFloat(document.getElementById('grade-coef').value) || 1;
-  const type = document.getElementById('grade-type').value;
-  const date = document.getElementById('grade-date').value;
-  const comment = document.getElementById('grade-comment').value.trim();
-
-  if (isNaN(grade) || grade < 0 || grade > 20) {
-    alert('Note invalide. Elle doit être comprise entre 0 et 20.');
-    return;
-  }
-
-  if (editingGradeId) {
-    const idx = gradesList.findIndex(g => g.id === editingGradeId);
-    if (idx !== -1) {
-      gradesList[idx] = { ...gradesList[idx], subject, grade, coef, type, date, comment };
-    }
-  } else {
-    gradesList.push({ id: Date.now(), subject, grade, coef, type, date, comment });
-  }
-
-  await saveData();
-  closeModal(gradeModal);
-  renderGrades();
-};
-
-// Écouter les changements sur l'objectif
-document.getElementById('target-average').addEventListener('input', () => renderGrades());
-
-function renderGrades() {
-  const container = document.getElementById('grades-container');
-  if (!container) return;
-  container.innerHTML = '';
-
-  // --- Calcul des stats globales ---
-  let totalGrade = 0;
-  let totalCoef = 0;
-  gradesList.forEach(g => {
-    totalGrade += g.grade * g.coef;
-    totalCoef += g.coef;
-  });
-
-  const average = totalCoef > 0 ? (totalGrade / totalCoef) : null;
-  const target = parseFloat(document.getElementById('target-average').value) || 14;
-
-  // Afficher la moyenne générale
-  const avgEl = document.getElementById('overall-average');
-  if (avgEl) {
-    avgEl.textContent = average !== null ? average.toFixed(2) + '/20' : '--/20';
-    avgEl.style.color = average !== null
-      ? (average >= target ? 'var(--success)' : 'var(--urgent)')
-      : 'var(--text-main)';
-  }
-
-  // Meilleures et pires matières (par moyenne)
-  const bySubject = {};
-  gradesList.forEach(g => {
-    if (!bySubject[g.subject]) bySubject[g.subject] = { total: 0, coef: 0 };
-    bySubject[g.subject].total += g.grade * g.coef;
-    bySubject[g.subject].coef += g.coef;
-  });
-  const subjectAverages = Object.entries(bySubject).map(([name, v]) => ({
-    name, avg: v.coef > 0 ? v.total / v.coef : 0
-  }));
-  subjectAverages.sort((a, b) => b.avg - a.avg);
-
-  const bestEl = document.getElementById('grades-best');
-  const worstEl = document.getElementById('grades-worst');
-  if (bestEl) bestEl.textContent = subjectAverages.length > 0 ? `${subjectAverages[0].name} (${subjectAverages[0].avg.toFixed(1)})` : '--';
-  if (worstEl) worstEl.textContent = subjectAverages.length > 0 ? `${subjectAverages[subjectAverages.length - 1].name} (${subjectAverages[subjectAverages.length - 1].avg.toFixed(1)})` : '--';
-
-  // --- Graphique barres par matière ---
-  const ctxGrades = document.getElementById('chart-grades');
-  if (ctxGrades && typeof Chart !== 'undefined') {
-    if (chartGradesInstance) chartGradesInstance.destroy();
-    const colors = subjectAverages.map(s =>
-      s.avg >= target ? 'rgba(52, 211, 153, 0.8)' : 'rgba(251, 113, 133, 0.8)'
-    );
-    chartGradesInstance = new Chart(ctxGrades.getContext('2d'), {
-      type: 'bar',
-      data: {
-        labels: subjectAverages.map(s => s.name),
-        datasets: [{
-          label: 'Moyenne /20',
-          data: subjectAverages.map(s => parseFloat(s.avg.toFixed(2))),
-          backgroundColor: colors,
-          borderColor: colors.map(c => c.replace('0.8', '1')),
-          borderWidth: 1,
-          borderRadius: 6,
-        }]
-      },
-      options: {
-        responsive: true,
-        scales: {
-          y: {
-            min: 0, max: 20,
-            ticks: { color: 'rgba(255,255,255,0.6)' },
-            grid: { color: 'rgba(255,255,255,0.05)' }
-          },
-          x: {
-            ticks: { color: 'rgba(255,255,255,0.6)' },
-            grid: { display: false }
-          }
-        },
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            callbacks: {
-              label: ctx => ` ${ctx.parsed.y}/20`
-            }
-          },
-          // Ligne d'objectif
-          annotation: undefined
-        }
-      }
-    });
-  }
-
-  // --- Affichage des cartes de notes ---
-  const emptyState = document.getElementById('empty-grades');
-  if (gradesList.length === 0) {
-    if (emptyState) emptyState.style.display = 'flex';
-    container.style.display = 'none';
-    return;
-  } else {
-    if (emptyState) emptyState.style.display = 'none';
-    container.style.display = 'grid';
-  }
-
-  // Trier par date décroissante, puis par matière
-  const sorted = [...gradesList].sort((a, b) => {
-    if (a.date && b.date) return new Date(b.date) - new Date(a.date);
-    return 0;
-  });
-
-  sorted.forEach(g => {
-    const noteColor = g.grade >= target ? 'var(--success)' : g.grade >= target * 0.7 ? 'var(--primary)' : 'var(--urgent)';
-    const card = document.createElement('div');
-    card.className = 'grade-card';
-    card.innerHTML = `
-            <div class="grade-card-score" style="color: ${noteColor};">
-                <span class="grade-value">${g.grade}</span>
-                <span class="grade-max">/20</span>
-            </div>
-            <div class="grade-card-info">
-                <div class="grade-subject">${g.subject}</div>
-                <div class="grade-meta">
-                    ${g.type ? `<span class="badge-type" style="font-size:0.75rem;">${g.type}</span>` : ''}
-                    ${g.date ? `<span style="color:var(--text-muted);font-size:0.8rem;"><i class="ph ph-calendar-blank"></i> ${new Date(g.date).toLocaleDateString('fr-FR')}</span>` : ''}
-                    <span style="color:var(--text-muted);font-size:0.8rem;">Coef: ${g.coef}</span>
-                </div>
-                ${g.comment ? `<div class="grade-comment"><i class="ph ph-note"></i> ${g.comment}</div>` : ''}
-            </div>
-            <div class="grade-card-actions">
-                <button class="btn-icon btn-edit-grade" title="Modifier"><i class="ph ph-pencil-simple"></i></button>
-                <button class="btn-icon danger btn-delete-grade" title="Supprimer"><i class="ph ph-trash"></i></button>
-            </div>
-        `;
-
-    // Bouton modifier
-    card.querySelector('.btn-edit-grade').onclick = () => {
-      editingGradeId = g.id;
-      document.getElementById('grade-subject').value = g.subject;
-      document.getElementById('grade-value').value = g.grade;
-      document.getElementById('grade-coef').value = g.coef;
-      document.getElementById('grade-type').value = g.type || 'Contrôle';
-      document.getElementById('grade-date').value = g.date || '';
-      document.getElementById('grade-comment').value = g.comment || '';
-      document.getElementById('grade-modal-title').textContent = 'Modifier la note';
-      openModal(gradeModal);
-    };
-
-    // Bouton supprimer
-    card.querySelector('.btn-delete-grade').onclick = async () => {
-      card.style.animation = 'cardExit 0.25s ease forwards';
-      setTimeout(async () => {
-        gradesList = gradesList.filter(x => x.id !== g.id);
-        await saveData();
-        renderGrades();
-      }, 250);
-    };
-
-    container.appendChild(card);
-  });
+// Écouter les changements sur l'objectif avec debounce
+const targetAvgEl = document.getElementById('target-average');
+if (targetAvgEl) {
+  targetAvgEl.addEventListener('input', debounce(() => renderGrades(), 150));
 }
 
 function renderHistory() {
@@ -2475,9 +2428,7 @@ function setupTrimButtons() {
   });
 }
 
-// Override renderGrades pour le filtre trimestre + badge trim
-const _origRenderGrades = renderGrades;
-renderGrades = function() {
+function renderGrades() {
   const container = document.getElementById('grades-container');
   if (!container) return;
   container.innerHTML = '';
@@ -2515,23 +2466,40 @@ renderGrades = function() {
 
   const ctxGrades = document.getElementById('chart-grades');
   if (ctxGrades && typeof Chart !== 'undefined') {
-    if (chartGradesInstance) chartGradesInstance.destroy();
     const colors = subjectAverages.map(s => s.avg >= target ? 'rgba(52, 211, 153, 0.8)' : 'rgba(251, 113, 133, 0.8)');
-    chartGradesInstance = new Chart(ctxGrades.getContext('2d'), {
-      type: 'bar',
-      data: {
-        labels: subjectAverages.map(s => s.name),
-        datasets: [{ label: 'Moyenne /20', data: subjectAverages.map(s => parseFloat(s.avg.toFixed(2))), backgroundColor: colors, borderColor: colors.map(c => c.replace('0.8', '1')), borderWidth: 1, borderRadius: 6 }]
-      },
-      options: {
-        responsive: true,
-        scales: {
-          y: { min: 0, max: 20, ticks: { color: 'rgba(255,255,255,0.6)' }, grid: { color: 'rgba(255,255,255,0.05)' } },
-          x: { ticks: { color: 'rgba(255,255,255,0.6)' }, grid: { display: false } }
+    const labels = subjectAverages.map(s => s.name);
+    const dataVals = subjectAverages.map(s => parseFloat(s.avg.toFixed(2)));
+
+    if (chartGradesInstance) {
+      chartGradesInstance.data.labels = labels;
+      chartGradesInstance.data.datasets[0].data = dataVals;
+      chartGradesInstance.data.datasets[0].backgroundColor = colors;
+      chartGradesInstance.data.datasets[0].borderColor = colors.map(c => c.replace('0.8', '1'));
+      chartGradesInstance.update('none');
+    } else {
+      chartGradesInstance = new Chart(ctxGrades.getContext('2d'), {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Moyenne /20',
+            data: dataVals,
+            backgroundColor: colors,
+            borderColor: colors.map(c => c.replace('0.8', '1')),
+            borderWidth: 1,
+            borderRadius: 6
+          }]
         },
-        plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.y}/20` } } }
-      }
-    });
+        options: {
+          responsive: true,
+          scales: {
+            y: { min: 0, max: 20, ticks: { color: 'rgba(255,255,255,0.6)' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+            x: { ticks: { color: 'rgba(255,255,255,0.6)' }, grid: { display: false } }
+          },
+          plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.y}/20` } } }
+        }
+      });
+    }
   }
 
   const emptyState = document.getElementById('empty-grades');
@@ -2544,8 +2512,10 @@ renderGrades = function() {
     container.style.display = 'grid';
   }
 
+  const fragment = document.createDocumentFragment();
+
   [...filteredGrades].sort((a, b) => {
-    if (a.date && b.date) return new Date(b.date) - new Date(a.date);
+    if (a.date && b.date) return (Date.parse(b.date) || 0) - (Date.parse(a.date) || 0);
     return 0;
   }).forEach(g => {
     const noteColor = g.grade >= target ? 'var(--success)' : g.grade >= target * 0.7 ? 'var(--primary)' : 'var(--urgent)';
@@ -2590,9 +2560,10 @@ renderGrades = function() {
         renderGrades();
       }, 250);
     };
-    container.appendChild(card);
+    fragment.appendChild(card);
   });
-};
+  container.appendChild(fragment);
+}
 
 // Patch gradeForm.onsubmit pour sauvegarder le trimestre
 gradeForm.onsubmit = async (e) => {
@@ -2710,14 +2681,18 @@ courseFicheForm.onsubmit = async (e) => {
   if (!subjectEntry) { showToast('Matière introuvable.', 'error'); return; }
 
   const newCourse = {
-    id: Date.now(), title,
+    id: editingCourseFicheId || Date.now(),
+    title,
     description: description || title,
     date: date || new Date().toISOString().split('T')[0],
-    trim, isCustom: true,
-    pdf: null,
+    trim,
+    isCustom: true,
+    pdf: cfPdfPath || null,
     attachmentPath: cfPdfPath || null,
     attachmentName: cfPdfNameStr || null
   };
+
+  if (!subjectEntry.courses) subjectEntry.courses = [];
 
   if (editingCourseFicheId) {
     const idx = subjectEntry.courses.findIndex(c => c.id === editingCourseFicheId);
@@ -2725,6 +2700,13 @@ courseFicheForm.onsubmit = async (e) => {
   } else {
     subjectEntry.courses.push(newCourse);
   }
+
+  // Nettoyage de l'état du formulaire
+  cfPdfPath = null;
+  cfPdfNameStr = '';
+  document.getElementById('cf-pdf-name').textContent = '';
+  courseFicheForm.reset();
+
   await saveData();
   closeModal(courseFicheModal);
   renderCourses();

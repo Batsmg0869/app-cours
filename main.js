@@ -6,6 +6,55 @@ const { spawn } = require('child_process');
 const ics = require('ics');
 const https = require('https');
 
+// Gérer immédiatement les événements d'installation Squirrel (Windows) pour éviter
+// l'ouverture prématurée d'une fenêtre blanche lors de l'exécution de l'installeur
+function handleSquirrelStartup() {
+    if (process.platform !== 'win32') return false;
+    const squirrelEvent = process.argv.find(arg => typeof arg === 'string' && arg.startsWith('--squirrel-'));
+    if (!squirrelEvent || squirrelEvent === '--squirrel-firstrun') return false;
+
+    const rootFolder = path.resolve(path.dirname(process.execPath), '..');
+    const updateDotExe = path.join(rootFolder, 'Update.exe');
+    const exeName = path.basename(process.execPath);
+
+    const spawnUpdate = (args, done) => {
+        try {
+            if (fs.existsSync(updateDotExe)) {
+                const child = spawn(updateDotExe, args, { detached: true });
+                child.on('close', done);
+                return;
+            }
+        } catch (_) {}
+        done();
+    };
+
+    switch (squirrelEvent) {
+        case '--squirrel-install':
+        case '--squirrel-updated':
+            spawnUpdate(['--createShortcut', exeName], () => {
+                app.quit();
+                process.exit(0);
+            });
+            return true;
+        case '--squirrel-uninstall':
+            spawnUpdate(['--removeShortcut', exeName], () => {
+                app.quit();
+                process.exit(0);
+            });
+            return true;
+        case '--squirrel-obsolete':
+            app.quit();
+            process.exit(0);
+            return true;
+    }
+    return false;
+}
+
+if (handleSquirrelStartup()) {
+    process.exit(0);
+}
+
+
 function compareVersions(v1, v2) {
     const p1 = (v1 || '').replace(/^v\.?/, '').split('.').map(n => parseInt(n) || 0);
     const p2 = (v2 || '').replace(/^v\.?/, '').split('.').map(n => parseInt(n) || 0);
@@ -46,6 +95,34 @@ function checkGitHubLatestRelease() {
         }).on('error', err => reject(err));
     });
 }
+
+function checkGitHubAllReleases() {
+    return new Promise((resolve, reject) => {
+        const options = {
+            hostname: 'api.github.com',
+            path: '/repos/Batsmg0869/app-cours/releases',
+            headers: {
+                'User-Agent': 'HomeworkPlanner-App'
+            }
+        };
+        https.get(options, (res) => {
+            let data = '';
+            res.on('data', chunk => { data += chunk; });
+            res.on('end', () => {
+                if (res.statusCode >= 200 && res.statusCode < 300) {
+                    try {
+                        resolve(JSON.parse(data));
+                    } catch (e) {
+                        reject(new Error('Format de réponse GitHub invalide'));
+                    }
+                } else {
+                    reject(new Error(`Réponse GitHub HTTP ${res.statusCode}`));
+                }
+            });
+        }).on('error', err => reject(err));
+    });
+}
+
 
 function setupUpdater(winTarget) {
     if (!app.isPackaged || process.platform === 'linux') return;
@@ -184,6 +261,138 @@ ipcMain.handle('open-external-url', async (_, url) => {
     }
 });
 
+
+ipcMain.handle('get-app-version', () => {
+    return app.getVersion();
+});
+
+ipcMain.handle('get-github-releases', async () => {
+    try {
+        const releases = await checkGitHubAllReleases();
+        if (!Array.isArray(releases)) return [];
+        return releases.map(r => {
+            const exeAsset = r.assets ? r.assets.find(a => a.name.endsWith('.exe')) : null;
+            const zipAsset = r.assets ? r.assets.find(a => a.name.endsWith('.zip')) : null;
+            const asset = exeAsset || zipAsset || (r.assets && r.assets[0]);
+            return {
+                id: r.id,
+                tagName: r.tag_name,
+                name: r.name || r.tag_name,
+                publishedAt: r.published_at,
+                body: r.body || '',
+                htmlUrl: r.html_url,
+                assetUrl: asset ? asset.browser_download_url : null,
+                assetName: asset ? asset.name : null,
+                assetSize: asset ? asset.size : null
+            };
+        });
+    } catch (err) {
+        console.error('Erreur get-github-releases:', err);
+        return [];
+    }
+});
+
+let currentDownloadReq = null;
+
+ipcMain.handle('download-update-file', async (event, { url, fileName, versionName }) => {
+    try {
+        if (!url) throw new Error('URL de téléchargement manquante');
+
+        const tempDir = app.getPath('temp');
+        const safeName = fileName || `homework-planner-update-${(versionName || 'latest').replace(/[^a-zA-Z0-9._-]/g, '_')}.exe`;
+        const destPath = path.join(tempDir, safeName);
+
+        if (fs.existsSync(destPath)) {
+            try { fs.unlinkSync(destPath); } catch (_) {}
+        }
+
+        const downloadWithRedirects = (currentUrl, redirectCount = 0) => {
+            return new Promise((resolve, reject) => {
+                if (redirectCount > 10) return reject(new Error('Trop de redirections'));
+
+                const req = https.get(currentUrl, {
+                    headers: { 'User-Agent': 'HomeworkPlanner-App' }
+                }, (res) => {
+                    if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+                        return resolve(downloadWithRedirects(res.headers.location, redirectCount + 1));
+                    }
+                    if (res.statusCode !== 200) {
+                        return reject(new Error(`Erreur HTTP lors du téléchargement : ${res.statusCode}`));
+                    }
+
+                    const totalBytes = parseInt(res.headers['content-length'] || '0', 10);
+                    let receivedBytes = 0;
+                    const fileStream = fs.createWriteStream(destPath);
+
+                    res.on('data', (chunk) => {
+                        receivedBytes += chunk.length;
+                        const percent = totalBytes > 0 ? Math.min(100, Math.round((receivedBytes / totalBytes) * 100)) : 0;
+                        if (win && !win.isDestroyed()) {
+                            win.webContents.send('download-progress', {
+                                percent,
+                                receivedBytes,
+                                totalBytes,
+                                versionName
+                            });
+                        }
+                    });
+
+                    res.pipe(fileStream);
+
+                    fileStream.on('finish', () => {
+                        fileStream.close(() => {
+                            resolve({ success: true, filePath: destPath, versionName });
+                        });
+                    });
+
+                    fileStream.on('error', (err) => {
+                        try { fs.unlinkSync(destPath); } catch (_) {}
+                        reject(err);
+                    });
+                });
+
+                currentDownloadReq = req;
+                req.on('error', (err) => reject(err));
+            });
+        };
+
+        const result = await downloadWithRedirects(url);
+        return result;
+    } catch (err) {
+        console.error('Erreur download-update-file:', err);
+        return { success: false, error: err.message };
+    }
+});
+
+ipcMain.handle('install-downloaded-update', async (_, { filePath, versionName }) => {
+    try {
+        if (!filePath || !fs.existsSync(filePath)) {
+            return { success: false, error: "Fichier d'installation introuvable." };
+        }
+
+        sendSmartNotification(
+            'Installation en cours...',
+            `L'application va se fermer pour installer la mise à jour ${versionName || ''}. Elle redémarrera automatiquement.`
+        );
+
+        const child = spawn(filePath, [], {
+            detached: true,
+            stdio: 'ignore'
+        });
+        child.unref();
+
+        setTimeout(() => {
+            app.isQuiting = true;
+            app.quit();
+        }, 1200);
+
+        return { success: true };
+    } catch (err) {
+        console.error('Erreur install-downloaded-update:', err);
+        return { success: false, error: err.message };
+    }
+});
+
 let win;
 let tray;
 let DATA_FILE;
@@ -218,6 +427,8 @@ function createWindow() {
     win = new BrowserWindow({
         width: 1250,
         height: 900,
+        backgroundColor: '#0b0f19',
+        show: false,
         icon: path.join(__dirname, 'favicon.ico'),
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
@@ -226,7 +437,26 @@ function createWindow() {
         }
     });
 
-    win.loadFile('index.html');
+    win.once('ready-to-show', () => {
+        if (win && !win.isDestroyed()) {
+            win.show();
+        }
+    });
+
+    setTimeout(() => {
+        if (win && !win.isDestroyed() && !win.isVisible()) {
+            win.show();
+        }
+    }, 3000);
+
+    const distIndex = path.join(__dirname, 'dist', 'index.html');
+    if (process.env.VITE_DEV_SERVER_URL) {
+        win.loadURL(process.env.VITE_DEV_SERVER_URL);
+    } else if (fs.existsSync(distIndex)) {
+        win.loadFile(distIndex);
+    } else {
+        win.loadFile('index.html');
+    }
 
     // Cache la fenêtre au lieu de quitter quand on clique sur la croix
     win.on('close', (event) => {
@@ -254,10 +484,11 @@ function sendSmartNotification(title, body) {
 }
 
 // Fonction de notification périodique
-function sendScheduledNotification() {
+async function sendScheduledNotification() {
     try {
         if (!fs.existsSync(DATA_FILE)) return;
-        const data = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+        const raw = await fs.promises.readFile(DATA_FILE, 'utf8');
+        const data = JSON.parse(raw);
         const tasks = (data.tasks || []).filter(t => !t.completed);
         if (tasks.length === 0) return;
 
@@ -313,24 +544,33 @@ function createTray() {
 }
 
 // IPC Handlers pour le stockage
-ipcMain.handle('save-data', (_, data) => {
+ipcMain.handle('save-data', async (_, data) => {
     try {
-        fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
+        const jsonStr = JSON.stringify(data);
+        const tempFile = `${DATA_FILE}.tmp`;
+        await fs.promises.writeFile(tempFile, jsonStr, 'utf8');
+        await fs.promises.rename(tempFile, DATA_FILE);
         return true;
-    } catch (e) { return false; }
+    } catch (e) {
+        console.error('Erreur save-data:', e);
+        return false;
+    }
 });
 
 ipcMain.handle('set-app-priority', (_, enabled) => applyAppPriority(enabled === true));
 
-ipcMain.handle('load-data', () => {
+ipcMain.handle('load-data', async () => {
     try {
         let data = null;
         if (fs.existsSync(DATA_FILE)) {
             try {
-                data = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+                const content = await fs.promises.readFile(DATA_FILE, 'utf8');
+                data = JSON.parse(content);
             } catch (err) {
                 console.error("Fichier de données corrompu. Création d'une sauvegarde.");
-                fs.copyFileSync(DATA_FILE, DATA_FILE + '.corrupted.bak');
+                try {
+                    await fs.promises.copyFile(DATA_FILE, DATA_FILE + '.corrupted.bak');
+                } catch (_) {}
             }
         }
         
@@ -338,7 +578,10 @@ ipcMain.handle('load-data', () => {
             // Si pas de fichier sauvegardé, charger les données par défaut depuis data.json
             const defaultDataPath = path.join(__dirname, 'data.json');
             if (fs.existsSync(defaultDataPath)) {
-                data = JSON.parse(fs.readFileSync(defaultDataPath, 'utf8'));
+                try {
+                    const defaultContent = await fs.promises.readFile(defaultDataPath, 'utf8');
+                    data = JSON.parse(defaultContent);
+                } catch (_) {}
             }
         }
         
@@ -408,15 +651,25 @@ function getAttachmentsDir() {
     return path.join(app.getPath('userData'), 'attachments');
 }
 
-ipcMain.handle('save-attachment', async (_, { filePath, fileName }) => {
+ipcMain.handle('save-attachment', async (_, payload) => {
     try {
+        const { filePath, fileName, content, name } = payload || {};
         const attachmentsDir = getAttachmentsDir();
         if (!fs.existsSync(attachmentsDir)) {
-            fs.mkdirSync(attachmentsDir, { recursive: true });
+            await fs.promises.mkdir(attachmentsDir, { recursive: true });
         }
-        const destPath = path.join(attachmentsDir, `${Date.now()}_${fileName}`);
-        fs.copyFileSync(filePath, destPath);
-        return { success: true, path: destPath, fileName };
+        const resolvedName = fileName || name || 'document.pdf';
+        const destPath = path.join(attachmentsDir, `${Date.now()}_${resolvedName}`);
+
+        if (filePath && fs.existsSync(filePath)) {
+            await fs.promises.copyFile(filePath, destPath);
+        } else if (content) {
+            const buf = Buffer.from(content, 'base64');
+            await fs.promises.writeFile(destPath, buf);
+        } else {
+            return { success: false, error: 'Aucun fichier ni contenu fourni' };
+        }
+        return { success: true, path: destPath, fileName: resolvedName };
     } catch (e) {
         console.error("Erreur lors de l'enregistrement de la pièce jointe:", e);
         return { success: false, error: e.message };
@@ -425,13 +678,19 @@ ipcMain.handle('save-attachment', async (_, { filePath, fileName }) => {
 
 ipcMain.handle('open-attachment', async (_, attachmentPath) => {
     try {
-        shell.openPath(attachmentPath);
+        const resolved = resolvePdfPath(attachmentPath) || attachmentPath;
+        const err = await shell.openPath(resolved);
+        if (err) {
+            console.error('Erreur shell.openPath pièce jointe:', err);
+            return { success: false, error: err };
+        }
         return { success: true };
     } catch (e) {
         console.error("Erreur lors de l'ouverture de la pièce jointe:", e);
         return { success: false, error: e.message };
     }
 });
+
 
 ipcMain.handle('export-ics', async (_, events) => {
     try {
@@ -465,15 +724,53 @@ ipcMain.handle('export-ics', async (_, events) => {
     }
 });
 
+function resolvePdfPath(inputPath) {
+    if (!inputPath || typeof inputPath !== 'string') return null;
+
+    // Nettoyer si accidentellement préfixé par 'Cours/' devant un chemin absolu
+    let cleanPath = inputPath;
+    if (cleanPath.startsWith('Cours/') || cleanPath.startsWith('Cours\\')) {
+        const withoutPrefix = cleanPath.slice(6);
+        if (path.isAbsolute(withoutPrefix)) {
+            cleanPath = withoutPrefix;
+        }
+    }
+
+    // 1. Si cleanPath est déjà un chemin absolu valide
+    if (path.isAbsolute(cleanPath) && fs.existsSync(cleanPath)) {
+        return cleanPath;
+    }
+
+    // 2. Si cleanPath existe tel quel
+    if (fs.existsSync(cleanPath)) {
+        return path.resolve(cleanPath);
+    }
+
+    const basePath = app.isPackaged ? app.getAppPath() : __dirname;
+
+    // 3. Chercher dans basePath/cleanPath
+    let candidate = path.join(basePath, cleanPath);
+    if (fs.existsSync(candidate)) return candidate;
+
+    // 4. Chercher dans basePath/Cours/cleanPath
+    candidate = path.join(basePath, 'Cours', cleanPath);
+    if (fs.existsSync(candidate)) return candidate;
+
+    // 5. Chercher dans le dossier attachments
+    const attachmentsDir = getAttachmentsDir();
+    candidate = path.join(attachmentsDir, path.basename(cleanPath));
+    if (fs.existsSync(candidate)) return candidate;
+
+    return null;
+}
+
 ipcMain.handle('open-pdf', async (_, pdfPath) => {
     try {
-        // En développement, utiliser __dirname; en production, utiliser app.getAppPath()
-        const basePath = app.isPackaged ? app.getAppPath() : __dirname;
-        const filePath = path.join(basePath, pdfPath);
-        console.log("Tentative d'ouverture du PDF:", filePath);
+        const filePath = resolvePdfPath(pdfPath);
+        console.log("Tentative d'ouverture du PDF résolu:", filePath, "pour:", pdfPath);
         
-        if (!fs.existsSync(filePath)) {
-            console.log('Fichier non trouvé. Base path:', basePath);
+        if (!filePath) {
+            console.log('Fichier PDF non trouvé pour:', pdfPath);
             return false;
         }
 
@@ -493,15 +790,11 @@ ipcMain.handle('open-pdf', async (_, pdfPath) => {
 // Télécharger/copier un PDF vers le dossier de téléchargements
 ipcMain.handle('download-pdf', async (_, pdfPath) => {
     try {
-        // En développement, utiliser __dirname; en production, utiliser app.getAppPath()
-        const basePath = app.isPackaged ? app.getAppPath() : __dirname;
-        const sourcePath = path.join(basePath, pdfPath);
+        const sourcePath = resolvePdfPath(pdfPath);
+        console.log('Tentative de téléchargement depuis:', sourcePath, 'pour:', pdfPath);
 
-        console.log('Tentative de téléchargement depuis:', sourcePath);
-        console.log('chemin existe:', fs.existsSync(sourcePath));
-
-        if (!fs.existsSync(sourcePath)) {
-            console.log('PDF source non trouvé. Base path:', basePath);
+        if (!sourcePath) {
+            console.log('PDF source non trouvé pour:', pdfPath);
             return { success: false, message: 'Fichier PDF non trouvé' };
         }
 
@@ -509,8 +802,8 @@ ipcMain.handle('download-pdf', async (_, pdfPath) => {
         const downloadDir = app.getPath('downloads');
         const destPath = path.join(downloadDir, fileName);
 
-        // Copier le fichier
-        fs.copyFileSync(sourcePath, destPath);
+        // Copier le fichier de façon asynchrone
+        await fs.promises.copyFile(sourcePath, destPath);
         console.log('PDF copié vers:', destPath);
 
         return { success: true, path: destPath, message: `PDF enregistré dans: ${downloadDir}` };
@@ -520,19 +813,16 @@ ipcMain.handle('download-pdf', async (_, pdfPath) => {
     }
 });
 
-ipcMain.handle('load-pdf', (_, pdfPath) => {
+ipcMain.handle('load-pdf', async (_, pdfPath) => {
     try {
-        // En développement, utiliser __dirname; en production, utiliser app.getAppPath()
-        const basePath = app.isPackaged ? app.getAppPath() : __dirname;
-        const filePath = path.join(basePath, pdfPath);
-        console.log('Chargement du PDF:', filePath);
-        console.log('Fichier existe:', fs.existsSync(filePath));
-        if (fs.existsSync(filePath)) {
-            const pdfBuffer = fs.readFileSync(filePath);
+        const filePath = resolvePdfPath(pdfPath);
+        console.log('Chargement du PDF résolu:', filePath, 'pour:', pdfPath);
+        if (filePath && fs.existsSync(filePath)) {
+            const pdfBuffer = await fs.promises.readFile(filePath);
             // Convertir en base64 pour passer via IPC
             return pdfBuffer.toString('base64');
         }
-        console.log('Fichier non trouvé. Base path:', basePath);
+        console.log('Fichier PDF non trouvé pour:', pdfPath);
         return null;
     } catch (e) {
         console.error('Erreur lors du chargement du PDF:', e);
@@ -559,10 +849,11 @@ app.whenReady().then(() => {
     setInterval(sendScheduledNotification, 30 * 60 * 1000);
 
     // Vérification des devoirs urgents au lancement (après 5 secondes)
-    setTimeout(() => {
+    setTimeout(async () => {
         try {
             if (!fs.existsSync(DATA_FILE)) return;
-            const data = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+            const raw = await fs.promises.readFile(DATA_FILE, 'utf8');
+            const data = JSON.parse(raw);
             const tasks = (data.tasks || []).filter(t => !t.completed);
             const now = new Date();
             const in24h = new Date(now.getTime() + 24 * 60 * 60 * 1000);

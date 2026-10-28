@@ -18,8 +18,25 @@ contextBridge.exposeInMainWorld('storage', {
 contextBridge.exposeInMainWorld('updater', {
     checkForUpdates: () => ipcRenderer.send('check-for-updates'),
     installUpdate: () => ipcRenderer.send('install-update'),
+    getAppVersion: () => ipcRenderer.invoke('get-app-version'),
+    getReleases: () => ipcRenderer.invoke('get-github-releases'),
+    downloadUpdate: (data) => ipcRenderer.invoke('download-update-file', data),
+    installDownloadedUpdate: (data) => ipcRenderer.invoke('install-downloaded-update', data),
     openExternal: (url) => ipcRenderer.invoke('open-external-url', url),
-    onUpdateStatus: (callback) => ipcRenderer.on('update-status', (_, message) => callback(message)),
-    onUpdateDownloaded: (callback) => ipcRenderer.on('update-downloaded', (_, releaseName) => callback(releaseName)),
-    onGithubUpdateAvailable: (callback) => ipcRenderer.on('github-update-available', (_, info) => callback(info))
+    onUpdateStatus: (callback) => {
+        ipcRenderer.removeAllListeners('update-status');
+        ipcRenderer.on('update-status', (_, message) => callback(message));
+    },
+    onUpdateDownloaded: (callback) => {
+        ipcRenderer.removeAllListeners('update-downloaded');
+        ipcRenderer.on('update-downloaded', (_, releaseName) => callback(releaseName));
+    },
+    onGithubUpdateAvailable: (callback) => {
+        ipcRenderer.removeAllListeners('github-update-available');
+        ipcRenderer.on('github-update-available', (_, info) => callback(info));
+    },
+    onDownloadProgress: (callback) => {
+        ipcRenderer.removeAllListeners('download-progress');
+        ipcRenderer.on('download-progress', (_, progress) => callback(progress));
+    }
 });
