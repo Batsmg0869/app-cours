@@ -69,7 +69,7 @@ export const Sidebar: React.FC = () => {
                 marginTop: '2px',
               }}
             >
-              v2.5.6 <i className="ph-bold ph-sparkle"></i>
+              v2.6.0 <i className="ph-bold ph-sparkle"></i>
             </span>
           </div>
         </div>

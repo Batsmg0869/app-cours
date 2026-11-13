@@ -8,25 +8,50 @@ export const ChangelogModal: React.FC = () => {
 
   const versions = [
     {
-      version: 'v2.5.6 (Actuelle)',
-      badge: 'Gestionnaire de Mises à Jour & Correctifs',
+      version: 'v2.6.0 (Actuelle)',
+      badge: 'Emploi du temps & Correctifs',
       badgeColor: 'var(--primary)',
       items: [
         {
+          title: 'Emploi du temps éditable',
+          desc: "Nouveau planning hebdomadaire interactif : ajoute, modifie et supprime tes créneaux de cours directement dans la grille. Choix de la couleur, de la salle, et gestion séparée des semaines A et B.",
+          icon: 'ph-bold ph-calendar-blank',
+          color: 'var(--primary)',
+        },
+        {
+          title: "Importation ICS — pas encore là (flemme)",
+          desc: "L'import de ton calendrier scolaire depuis un fichier ICS ? Bonne idée. Pas faite. J'avais la flemme. L'export ICS de tes devoirs, lui, fonctionne toujours.",
+          icon: 'ph-bold ph-clock-countdown',
+          color: 'var(--text-muted)',
+        },
+        {
+          title: 'Correction du lecteur PDF',
+          desc: "Résolution du bug critique empêchant l'ouverture des fichiers PDF dans la visionneuse intégrée (erreur \"fake worker failed\"). Migration vers le build legacy de pdfjs-dist pour une compatibilité totale avec Electron.",
+          icon: 'ph-bold ph-file-pdf',
+          color: 'var(--success)',
+        },
+      ],
+    },
+    {
+      version: 'v2.5.6',
+      badge: 'Gestionnaire de Mises à Jour & Correctifs',
+      badgeColor: 'var(--accent)',
+      items: [
+        {
           title: 'Sélecteur de version personnalisée',
-          desc: 'Possibilité de choisir et d’installer n’importe quelle version publiée sur GitHub directement depuis les paramètres, tout en conservant le bouton d’accès rapide vers la version la plus récente.',
+          desc: "Possibilité de choisir et d'installer n'importe quelle version publiée sur GitHub directement depuis les paramètres, tout en conservant le bouton d'accès rapide vers la version la plus récente.",
           icon: 'ph-bold ph-list-dashes',
           color: 'var(--primary)',
         },
         {
-          title: 'Correction de la fenêtre blanche lors de l’installation',
-          desc: 'Prise en charge native des événements du programme d’installation Squirrel.Windows et affichage masqué jusqu’à ce que le rendu soit prêt : suppression définitive de l’écran blanc lors des installations et lancements.',
+          title: "Correction de la fenêtre blanche lors de l'installation",
+          desc: "Prise en charge native des événements du programme d'installation Squirrel.Windows et affichage masqué jusqu'à ce que le rendu soit prêt : suppression définitive de l'écran blanc lors des installations et lancements.",
           icon: 'ph-bold ph-shield-check',
           color: 'var(--success)',
         },
         {
           title: 'Suivi de progression en temps réel',
-          desc: 'Barre de progression animée, décompte précis des mégaoctets et notification claire de fin de téléchargement et d’installation.',
+          desc: "Barre de progression animée, décompte précis des mégaoctets et notification claire de fin de téléchargement et d'installation.",
           icon: 'ph-bold ph-download-simple',
           color: 'var(--accent)',
         },
@@ -39,13 +64,13 @@ export const ChangelogModal: React.FC = () => {
       items: [
         {
           title: 'Migration complète vers React 18 + TypeScript + Vite',
-          desc: 'Refonte modulaire de toute la couche UI : composants déclaratifs, typage statique strict et temps de chargement instantané avec Vite.',
+          desc: "Refonte modulaire de toute la couche UI : composants déclaratifs, typage statique strict et temps de chargement instantané avec Vite.",
           icon: 'ph-bold ph-code',
           color: 'var(--primary)',
         },
         {
           title: 'Performances GPU et Réactivité Décuplée',
-          desc: 'Gestion d’état optimisée avec debouncing automatique et rafraîchissements ciblés du Virtual DOM.',
+          desc: "Gestion d'état optimisée avec debouncing automatique et rafraîchissements ciblés du Virtual DOM.",
           icon: 'ph-bold ph-lightning',
           color: 'var(--accent)',
         },
@@ -57,14 +82,14 @@ export const ChangelogModal: React.FC = () => {
       badgeColor: 'var(--success)',
       items: [
         {
-          title: 'I/O Asynchrones & Sauvegarde Atomique',
-          desc: 'Toutes les opérations disque (sauvegarde data.json, copies PDF, téléchargements) sont désormais 100% non-bloquantes.',
+          title: "I/O Asynchrones & Sauvegarde Atomique",
+          desc: "Toutes les opérations disque (sauvegarde data.json, copies PDF, téléchargements) sont désormais 100% non-bloquantes.",
           icon: 'ph-bold ph-hard-drives',
           color: 'var(--success)',
         },
         {
           title: 'Optimisation de la Visionneuse PDF',
-          desc: 'Nettoyage automatique de la mémoire RAM et GPU lors de la fermeture des documents.',
+          desc: "Nettoyage automatique de la mémoire RAM et GPU lors de la fermeture des documents.",
           icon: 'ph-bold ph-file-pdf',
           color: 'var(--warning)',
         },
@@ -76,20 +101,20 @@ export const ChangelogModal: React.FC = () => {
       badgeColor: 'var(--warning)',
       items: [
         {
-          title: 'Affichage du Programme du Jour sur l’Accueil',
-          desc: 'Aperçu immédiat des devoirs à rendre et barre de progression dynamique.',
+          title: "Affichage du Programme du Jour sur l'Accueil",
+          desc: "Aperçu immédiat des devoirs à rendre et barre de progression dynamique.",
           icon: 'ph-bold ph-calendar-check',
           color: 'var(--primary)',
         },
         {
           title: 'Gestion par Trimestres & Simulateur de Notes',
-          desc: 'Découpe par période (T1, T2, T3) avec calculs pondérés et anticipation de la note requise pour atteindre son objectif.',
+          desc: "Découpe par période (T1, T2, T3) avec calculs pondérés et anticipation de la note requise pour atteindre son objectif.",
           icon: 'ph-bold ph-calculator',
           color: 'var(--accent)',
         },
         {
           title: 'Notifications de Rappel Intelligentes',
-          desc: 'Alertes discrètes sous 24h, aucun parasite si aucun devoir n’est prévu.',
+          desc: "Alertes discrètes sous 24h, aucun parasite si aucun devoir n'est prévu.",
           icon: 'ph-bold ph-bell-ringing',
           color: 'var(--urgent)',
         },
