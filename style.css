@@ -250,35 +250,62 @@ body[data-theme="apple"] {
    THEME — Minecraft
    ===================================================== */
 body[data-theme="minecraft"] {
-    --primary: #5B8731;
-    --primary-hover: #4C7229;
-    --primary-soft: rgba(91, 135, 49, 0.2);
-    --accent: #8B5A2B;
-    --urgent: #e74c3c;
-    --success: #2ecc71;
-    --bg-main: #2b2b2b;
-    --bg-sidebar: #333333;
-    --bg-card: #3c3c3c;
-    --bg-card-hover: #4a4a4a;
-    --bg-hover: #4a4a4a;
-    --bg-input: #2b2b2b;
+    /* Couleurs principales */
+    --primary: #55AA00;
+    --primary-hover: #448800;
+    --primary-soft: rgba(85, 170, 0, 0.2);
+    --accent: #FFAA00;
+    --accent-soft: rgba(255, 170, 0, 0.2);
+    --urgent: #FF5555;
+    --urgent-soft: rgba(255, 85, 85, 0.2);
+    --success: #55FF55;
+    --success-soft: rgba(85, 255, 85, 0.15);
+    --warning: #FFAA00;
+
+    /* Fonds — texture dirt/stone de Minecraft */
+    --bg-main: #1a1a1a;
+    --bg-sidebar: #2a2a2a;
+    --bg-card: #373737;
+    --bg-card-hover: #404040;
+    --bg-hover: #404040;
+    --bg-input: #1f1f1f;
+
+    /* Bordures style pierre Minecraft */
     --border: #111111;
-    --border-light: #1a1a1a;
-    --border-focus: rgba(91, 135, 49, 0.5);
-    --border-active: rgba(91, 135, 49, 0.35);
-    --text: #ffffff;
-    --text-dim: #dddddd;
-    --text-muted: #aaaaaa;
+    --border-light: #1e1e1e;
+    --border-focus: #55AA00;
+    --border-active: rgba(85, 170, 0, 0.5);
+
+    /* Texte */
+    --text: #FFFFFF;
+    --text-dim: #CCCCCC;
+    --text-muted: #888888;
+
+    /* Rayon = 0 (pixels carrés) */
     --radius-xs: 0px;
     --radius-sm: 0px;
     --radius-md: 0px;
     --radius-lg: 0px;
     --radius-xl: 0px;
     --radius-full: 0px;
-    --font-base: 'Minecraft', monospace;
-    --shadow-glow: 4px 4px 0px rgba(0, 0, 0, 0.4);
-    --shadow-sm: 2px 2px 0px rgba(0, 0, 0, 0.3);
-    --bg-active-nav: rgba(91, 135, 49, 0.25);
+
+    /* Police Minecraft */
+    --font-base: 'Minecraft', 'Monocraft', monospace;
+
+    /* Ombres style pixel */
+    --shadow-xs: 2px 2px 0px #000;
+    --shadow-sm: 3px 3px 0px #000;
+    --shadow-md: 4px 4px 0px #000;
+    --shadow-glow: 0 0 0 2px #55AA00;
+    --shadow-glow-accent: 0 0 0 2px #FFAA00;
+
+    --bg-active-nav: rgba(85, 170, 0, 0.2);
+
+    /* Désactiver les animations */
+    --dur-instant: 0ms;
+    --dur-fast: 0ms;
+    --dur-normal: 0ms;
+    --dur-slow: 0ms;
 }
 
 /* =====================================================
@@ -2861,44 +2888,423 @@ body[data-theme="apple"] option {
 
 /* =====================================================
    MINECRAFT THEME OVERRIDES
+   Style authentique Minecraft (GUI, boutons, textures)
    ===================================================== */
+
+/* ---- Fond général : texture "dirt" en SVG pixel art ---- */
 body[data-theme="minecraft"] {
-    font-size: 13px !important;
+    font-family: 'Minecraft', 'Monocraft', monospace !important;
+    font-size: 14px !important;
+    image-rendering: pixelated;
+    /* Texture dirt Minecraft générée en SVG */
+    background-color: #1a1a1a !important;
+    background-image:
+        repeating-linear-gradient(
+            0deg,
+            transparent,
+            transparent 3px,
+            rgba(0,0,0,0.08) 3px,
+            rgba(0,0,0,0.08) 4px
+        ),
+        repeating-linear-gradient(
+            90deg,
+            transparent,
+            transparent 3px,
+            rgba(0,0,0,0.05) 3px,
+            rgba(0,0,0,0.05) 4px
+        ) !important;
 }
 
-body[data-theme="minecraft"] h1 {
-    font-size: 1.8rem !important;
+/* ---- Éliminer toutes les animations fluides ---- */
+body[data-theme="minecraft"] *,
+body[data-theme="minecraft"] *::before,
+body[data-theme="minecraft"] *::after {
+    transition: none !important;
+    animation-duration: 0.01ms !important;
+    border-radius: 0 !important;
+    transform: none !important;
 }
 
-body[data-theme="minecraft"] h2 {
-    font-size: 1.5rem !important;
+/* Exception : les toasts et modals peuvent apparaître */
+body[data-theme="minecraft"] .modal-card,
+body[data-theme="minecraft"] .modal-overlay,
+body[data-theme="minecraft"] .toast {
+    animation: none !important;
 }
 
-body[data-theme="minecraft"] h3 {
-    font-size: 1.2rem !important;
-}
-
-body[data-theme="minecraft"] h4 {
-    font-size: 1rem !important;
-}
-
+/* ---- Texte avec ombre portée (style Minecraft) ---- */
 body[data-theme="minecraft"] h1,
 body[data-theme="minecraft"] h2,
 body[data-theme="minecraft"] h3,
-body[data-theme="minecraft"] h4 {
-    letter-spacing: 0.05em !important;
+body[data-theme="minecraft"] h4,
+body[data-theme="minecraft"] h5,
+body[data-theme="minecraft"] h6 {
+    text-shadow: 2px 2px 0px #3f3f00, 1px 1px 0px #000 !important;
+    letter-spacing: 0.03em !important;
+    color: #FFFF55 !important;
     line-height: 1.4 !important;
+    font-family: 'Minecraft', 'Monocraft', monospace !important;
+}
+
+/* Texte normal avec ombre Minecraft */
+body[data-theme="minecraft"] p,
+body[data-theme="minecraft"] span,
+body[data-theme="minecraft"] div,
+body[data-theme="minecraft"] label,
+body[data-theme="minecraft"] li {
+    text-shadow: 1px 1px 0px #000 !important;
+}
+
+/* ---- Sidebar style panneau bois/pierre ---- */
+body[data-theme="minecraft"] .sidebar {
+    background: #2a2a2a !important;
+    border-right: 4px solid #000 !important;
+    box-shadow: 4px 0 0 #111 !important;
+    /* Texture vertcale bois */
+    background-image:
+        repeating-linear-gradient(
+            90deg,
+            transparent,
+            transparent 7px,
+            rgba(0,0,0,0.12) 7px,
+            rgba(0,0,0,0.12) 8px
+        ) !important;
+}
+
+/* ---- Logo / Brand ---- */
+body[data-theme="minecraft"] .logo-box {
+    background: #55AA00 !important;
+    box-shadow: inset -2px -4px 0 #2d5c00, inset 2px 2px 0 #88cc33 !important;
+    image-rendering: pixelated;
+}
+
+/* ---- Nav items : style boutons Minecraft ---- */
+body[data-theme="minecraft"] .nav-item {
+    background: transparent !important;
+    border: none !important;
+    color: #CCCCCC !important;
+    font-family: 'Minecraft', 'Monocraft', monospace !important;
+    text-shadow: 1px 1px 0px #000 !important;
+    padding: 8px 12px !important;
+}
+
+body[data-theme="minecraft"] .nav-item.active {
+    background: #373737 !important;
+    border-left: 4px solid #55AA00 !important;
+    color: #FFFFFF !important;
+    box-shadow: inset 0 0 0 1px #000 !important;
+}
+
+body[data-theme="minecraft"] .nav-item:hover:not(.active) {
+    background: #313131 !important;
+    color: #FFFF55 !important;
+}
+
+/* ---- Bouton principal : style bouton Minecraft gris 3D ---- */
+body[data-theme="minecraft"] .btn-primary,
+body[data-theme="minecraft"] .btn.btn-primary {
+    background: #555555 !important;
+    color: #FFFFFF !important;
+    font-family: 'Minecraft', 'Monocraft', monospace !important;
+    font-size: 13px !important;
+    text-shadow: 1px 1px 0px #000 !important;
+    border: none !important;
+    box-shadow:
+        inset -2px -4px 0 #2b2b2b,
+        inset 2px 2px 0 #888888,
+        0 4px 0 #000 !important;
+    padding: 10px 20px !important;
+    letter-spacing: 0.03em !important;
+    filter: none !important;
+}
+
+body[data-theme="minecraft"] .btn-primary:hover,
+body[data-theme="minecraft"] .btn.btn-primary:hover {
+    background: #666666 !important;
+    color: #FFFF55 !important;
+    box-shadow:
+        inset -2px -4px 0 #333333,
+        inset 2px 2px 0 #999999,
+        0 4px 0 #000 !important;
+}
+
+body[data-theme="minecraft"] .btn-primary:active,
+body[data-theme="minecraft"] .btn.btn-primary:active {
+    background: #4a4a4a !important;
+    box-shadow:
+        inset 2px 4px 0 #2b2b2b,
+        inset -2px -2px 0 #888888,
+        0 2px 0 #000 !important;
+    padding-top: 12px !important;
+    padding-bottom: 8px !important;
+}
+
+/* ---- Bouton secondaire ---- */
+body[data-theme="minecraft"] .btn-secondary,
+body[data-theme="minecraft"] .btn.btn-secondary {
+    background: #464646 !important;
+    color: #CCCCCC !important;
+    font-family: 'Minecraft', 'Monocraft', monospace !important;
+    text-shadow: 1px 1px 0px #000 !important;
+    border: none !important;
+    box-shadow:
+        inset -2px -4px 0 #222222,
+        inset 2px 2px 0 #6e6e6e,
+        0 4px 0 #000 !important;
+}
+
+body[data-theme="minecraft"] .btn-secondary:hover,
+body[data-theme="minecraft"] .btn.btn-secondary:hover {
+    background: #525252 !important;
+    color: #FFFF55 !important;
+}
+
+/* ---- Chips / petits boutons toggle ---- */
+body[data-theme="minecraft"] .chip,
+body[data-theme="minecraft"] button[style*="border-radius: 999px"],
+body[data-theme="minecraft"] button[style*="border-radius:'999px'"] {
+    background: #555 !important;
+    color: #ccc !important;
+    border: none !important;
+    box-shadow: inset -1px -2px 0 #2b2b2b, inset 1px 1px 0 #888 !important;
+    font-family: 'Minecraft', 'Monocraft', monospace !important;
+    text-shadow: 1px 1px 0 #000 !important;
+}
+
+body[data-theme="minecraft"] .chip.active {
+    background: #55AA00 !important;
+    color: #fff !important;
+    box-shadow: inset -1px -2px 0 #2d5c00, inset 1px 1px 0 #88cc33 !important;
+}
+
+/* ---- Section cards : panneaux pierre ---- */
+body[data-theme="minecraft"] .section-card,
+body[data-theme="minecraft"] .stat-card,
+body[data-theme="minecraft"] .modal-card {
+    background: #373737 !important;
+    border: 2px solid #111 !important;
+    box-shadow:
+        inset -2px -2px 0 #1a1a1a,
+        inset 2px 2px 0 #4a4a4a,
+        0 4px 0 #000 !important;
+    border-radius: 0 !important;
+}
+
+body[data-theme="minecraft"] .section-card:hover {
+    border-color: #555 !important;
+    transform: none !important;
+}
+
+/* ---- Inputs ---- */
+body[data-theme="minecraft"] input[type="text"],
+body[data-theme="minecraft"] input[type="number"],
+body[data-theme="minecraft"] input[type="date"],
+body[data-theme="minecraft"] input[type="email"],
+body[data-theme="minecraft"] input[type="password"],
+body[data-theme="minecraft"] textarea,
+body[data-theme="minecraft"] select,
+body[data-theme="minecraft"] .search-input {
+    background: #1f1f1f !important;
+    color: #FFFFFF !important;
+    border: 2px solid #111 !important;
+    font-family: 'Minecraft', 'Monocraft', monospace !important;
+    font-size: 13px !important;
+    text-shadow: none !important;
+    box-shadow: inset 2px 2px 0 #000, inset -1px -1px 0 #444 !important;
+    caret-color: #55FF55;
+}
+
+body[data-theme="minecraft"] input:focus,
+body[data-theme="minecraft"] textarea:focus,
+body[data-theme="minecraft"] select:focus,
+body[data-theme="minecraft"] .search-bar:focus-within {
+    border-color: #55AA00 !important;
+    box-shadow: inset 2px 2px 0 #000, 0 0 0 2px #55AA00 !important;
+    outline: none !important;
+}
+
+body[data-theme="minecraft"] input::placeholder,
+body[data-theme="minecraft"] textarea::placeholder {
+    color: #666 !important;
+}
+
+/* ---- Search bar ---- */
+body[data-theme="minecraft"] .search-bar {
+    background: #1f1f1f !important;
+    border: 2px solid #111 !important;
+    box-shadow: inset 2px 2px 0 #000 !important;
+}
+
+/* ---- Topbar ---- */
+body[data-theme="minecraft"] .topbar,
+body[data-theme="minecraft"] [class*="topbar"] {
+    background: #2a2a2a !important;
+    border-bottom: 4px solid #000 !important;
+    box-shadow: 0 4px 0 #111 !important;
+}
+
+/* ---- Modal overlay ---- */
+body[data-theme="minecraft"] .modal-overlay {
+    background: rgba(0, 0, 0, 0.85) !important;
+}
+
+/* ---- Bouton fermer modal ---- */
+body[data-theme="minecraft"] .btn-icon {
+    background: #464646 !important;
+    border: 1px solid #111 !important;
+    color: #ccc !important;
+    text-shadow: 1px 1px 0 #000 !important;
+    box-shadow: inset -1px -2px 0 #222, inset 1px 1px 0 #6e6e6e !important;
+}
+
+body[data-theme="minecraft"] .btn-icon:hover {
+    background: #555 !important;
+    color: #FFFF55 !important;
+    transform: none !important;
+}
+
+/* ---- Scrollbar Minecraft ---- */
+body[data-theme="minecraft"] ::-webkit-scrollbar {
+    width: 8px;
+    background: #1a1a1a;
+}
+
+body[data-theme="minecraft"] ::-webkit-scrollbar-thumb {
+    background: #555;
+    border: 1px solid #000;
+    box-shadow: inset 1px 1px 0 #777, inset -1px -1px 0 #333;
+}
+
+body[data-theme="minecraft"] ::-webkit-scrollbar-track {
+    background: #1f1f1f;
+    border-left: 1px solid #000;
+}
+
+/* ---- Badges et tags de matières ---- */
+body[data-theme="minecraft"] span[style*="primary-soft"],
+body[data-theme="minecraft"] .badge-type {
+    background: #2d5c00 !important;
+    color: #88cc33 !important;
+    text-shadow: 1px 1px 0 #000 !important;
+    border: 1px solid #111 !important;
+}
+
+/* ---- Checkboxes style Minecraft ---- */
+body[data-theme="minecraft"] input[type="checkbox"] {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    width: 16px !important;
+    height: 16px !important;
+    background: #1f1f1f !important;
+    border: 2px solid #555 !important;
+    box-shadow: inset 1px 1px 0 #000, inset -1px -1px 0 #333 !important;
+    cursor: pointer !important;
+    position: relative !important;
+    flex-shrink: 0 !important;
+}
+
+body[data-theme="minecraft"] input[type="checkbox"]:checked {
+    background: #55AA00 !important;
+    border-color: #2d5c00 !important;
+}
+
+body[data-theme="minecraft"] input[type="checkbox"]:checked::after {
+    content: '✓' !important;
+    position: absolute !important;
+    top: -2px !important;
+    left: 1px !important;
+    color: #fff !important;
+    font-size: 11px !important;
+    font-family: monospace !important;
+    text-shadow: 1px 1px 0 #000 !important;
+}
+
+/* ---- Options dropdown ---- */
+body[data-theme="minecraft"] option {
+    background: #2a2a2a !important;
+    color: #fff !important;
+    font-family: 'Minecraft', 'Monocraft', monospace !important;
+}
+
+/* ---- Progress bars ---- */
+body[data-theme="minecraft"] [style*="background: var(--primary)"],
+body[data-theme="minecraft"] [style*="background:var(--primary)"],
+body[data-theme="minecraft"] [style*="background-color: var(--primary)"] {
+    background: #55AA00 !important;
+}
+
+/* ---- Bouton profil / user card ---- */
+body[data-theme="minecraft"] .user-profile {
+    background: #2a2a2a !important;
+    border: 2px solid #111 !important;
+    box-shadow: inset -1px -2px 0 #111, inset 1px 1px 0 #444 !important;
+}
+
+/* ---- Avatar ---- */
+body[data-theme="minecraft"] .avatar {
+    background: #55AA00 !important;
+    box-shadow: inset -2px -2px 0 #2d5c00, inset 2px 2px 0 #88cc33 !important;
+    border-radius: 0 !important;
+    image-rendering: pixelated;
+}
+
+/* ---- Éléments actifs ---- */
+body[data-theme="minecraft"] [style*="var(--primary)"] {
+    color: #55AA00 !important;
+}
+
+/* ---- hr / séparateurs ---- */
+body[data-theme="minecraft"] hr,
+body[data-theme="minecraft"] [style*="border-top"] {
+    border-color: #111 !important;
+}
+
+/* ---- Effet bevel sur les cartes tâches ---- */
+body[data-theme="minecraft"] .task-card {
+    box-shadow:
+        inset -2px -2px 0 #1a1a1a,
+        inset 2px 2px 0 #4a4a4a,
+        0 4px 0 #000 !important;
+    border-color: #111 !important;
+}
+
+body[data-theme="minecraft"] .task-card:hover {
+    border-color: #55AA00 !important;
+    transform: none !important;
+}
+
+/* ---- Couleur active nav accent ---- */
+body[data-theme="minecraft"] span[style*="var(--primary)"] {
+    color: #55AA00 !important;
+    text-shadow: 0 0 0 transparent !important;
+}
+
+/* Badge nombre de devoirs */
+body[data-theme="minecraft"] .nav-item span[style*="border-radius: 999px"],
+body[data-theme="minecraft"] .nav-item span[style*="border-radius:999px"] {
+    background: #55AA00 !important;
+    color: #000 !important;
+    text-shadow: none !important;
+    border-radius: 0 !important;
+    box-shadow: inset -1px -1px 0 #2d5c00 !important;
+    font-size: 0.75rem !important;
+}
+
+/* ---- Shimmer désactivé ---- */
+body[data-theme="minecraft"] .btn::after {
+    display: none !important;
+}
+
+/* ---- Badges priorité ---- */
+body[data-theme="minecraft"] span[style*="urgent"] {
+    color: #FF5555 !important;
+    text-shadow: 1px 1px 0 #000 !important;
 }
 
 body[data-theme="minecraft"] .badge-type.projet {
-    border-color: rgba(222, 184, 135, 0.4) !important;
-    color: #deb887 !important;
-    background: rgba(222, 184, 135, 0.1) !important;
-}
-
-body[data-theme="minecraft"] option {
-    background: #2b2b2b !important;
-    color: #fff !important;
+    border-color: #FFAA00 !important;
+    color: #FFAA00 !important;
+    background: rgba(255, 170, 0, 0.15) !important;
 }
 
 body:not([data-theme]) option,

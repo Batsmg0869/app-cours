@@ -28,13 +28,19 @@ export const AppContent: React.FC = () => {
 
   // Appliquer le thème actif
   useEffect(() => {
-    if (data.settings?.theme) {
-      document.documentElement.setAttribute('data-theme', data.settings.theme);
-      document.body.setAttribute('data-theme', data.settings.theme);
+    const theme = data.settings?.theme;
+    if (theme) {
+      document.documentElement.setAttribute('data-theme', theme);
+      document.body.setAttribute('data-theme', theme);
     }
-    if (data.settings?.fontFamily === 'minecraft') {
+
+    const isMinecraftTheme = theme === 'minecraft';
+    const isMinecraftFont = data.settings?.fontFamily === 'minecraft';
+
+    // Police Minecraft : activée soit par fontFamily setting, soit automatiquement avec le thème
+    if (isMinecraftFont || isMinecraftTheme) {
       document.body.classList.add('font-minecraft');
-      document.body.style.fontFamily = 'Minecraft, Monocraft, monospace';
+      document.body.style.fontFamily = "Minecraft, Monocraft, monospace";
     } else {
       document.body.classList.remove('font-minecraft');
       document.body.style.fontFamily = '';
