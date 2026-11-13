@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import * as pdfjsLib from 'pdfjs-dist';
+import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.mjs';
+import * as pdfjsWorker from 'pdfjs-dist/legacy/build/pdf.worker.mjs';
 
 // Imports de styles (Inter, Phosphor Icons, et Design System de l'app)
 import '../assets/fonts/Inter/inter.css';
@@ -15,8 +16,9 @@ import '../style.css';
 import { AppProvider } from './context/AppContext';
 import { AppContent } from './App';
 
-// Configuration du worker PDF.js
-pdfjsLib.GlobalWorkerOptions.workerSrc = 'assets/js/pdf.worker.min.js';
+// Configuration du worker PDF.js (in-process fiable en environnement Electron)
+(globalThis as any).pdfjsWorker = pdfjsWorker;
+(pdfjsLib as any).GlobalWorkerOptions.workerSrc = 'pdf.worker.mjs';
 
 const rootEl = document.getElementById('root');
 if (rootEl) {
