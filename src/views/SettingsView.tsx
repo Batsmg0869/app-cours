@@ -404,7 +404,13 @@ export const SettingsView: React.FC = () => {
               onChange={(e) => {
                 const font = e.target.checked ? 'minecraft' : 'inter';
                 updateSettings({ fontFamily: font });
-                document.body.style.fontFamily = font === 'minecraft' ? 'Minecraft, sans-serif' : '';
+                if (font === 'minecraft') {
+                  document.body.classList.add('font-minecraft');
+                  document.body.style.fontFamily = 'Minecraft, Monocraft, monospace';
+                } else {
+                  document.body.classList.remove('font-minecraft');
+                  document.body.style.fontFamily = '';
+                }
               }}
               style={{ cursor: 'pointer', transform: 'scale(1.25)' }}
             />

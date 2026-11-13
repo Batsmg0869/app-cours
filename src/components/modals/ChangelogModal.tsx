@@ -19,8 +19,8 @@ export const ChangelogModal: React.FC = () => {
           color: 'var(--primary)',
         },
         {
-          title: "Importation ICS — pas encore là (flemme)",
-          desc: "L'import de ton calendrier scolaire depuis un fichier ICS ? Bonne idée. Pas faite. J'avais la flemme. L'export ICS de tes devoirs, lui, fonctionne toujours.",
+          title: "Importation ICS — pas encore là",
+          desc: "flemme d'ajouter la feature",
           icon: 'ph-bold ph-clock-countdown',
           color: 'var(--text-muted)',
         },
@@ -29,6 +29,12 @@ export const ChangelogModal: React.FC = () => {
           desc: "Résolution du bug critique empêchant l'ouverture des fichiers PDF dans la visionneuse intégrée (erreur \"fake worker failed\"). Migration vers le build legacy de pdfjs-dist pour une compatibilité totale avec Electron.",
           icon: 'ph-bold ph-file-pdf',
           color: 'var(--success)',
+        },
+        {
+          title: 'Typographie Minecraft réparée (Monocraft)',
+          desc: "Intégration complète de la police Monocraft avec prise en charge intégrale des caractères accentués, symboles et ligatures, applicable à toute l'interface.",
+          icon: 'ph-bold ph-text-aa',
+          color: 'var(--accent)',
         },
       ],
     },

@@ -3,8 +3,9 @@ import ReactDOM from 'react-dom/client';
 import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.mjs';
 import * as pdfjsWorker from 'pdfjs-dist/legacy/build/pdf.worker.mjs';
 
-// Imports de styles (Inter, Phosphor Icons, et Design System de l'app)
+// Imports de styles (Inter, Monocraft, Phosphor Icons, et Design System de l'app)
 import '../assets/fonts/Inter/inter.css';
+import '../assets/fonts/Monocraft/monocraft.css';
 import '../assets/phosphor/regular/style.css';
 import '../assets/phosphor/bold/style.css';
 import '../assets/phosphor/thin/style.css';

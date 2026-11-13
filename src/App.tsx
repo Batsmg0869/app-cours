@@ -33,8 +33,10 @@ export const AppContent: React.FC = () => {
       document.body.setAttribute('data-theme', data.settings.theme);
     }
     if (data.settings?.fontFamily === 'minecraft') {
-      document.body.style.fontFamily = 'Minecraft, sans-serif';
+      document.body.classList.add('font-minecraft');
+      document.body.style.fontFamily = 'Minecraft, Monocraft, monospace';
     } else {
+      document.body.classList.remove('font-minecraft');
       document.body.style.fontFamily = '';
     }
   }, [data.settings]);

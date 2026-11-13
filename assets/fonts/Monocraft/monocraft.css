@@ -1,0 +1,35 @@
+@font-face {
+  font-family: 'Minecraft';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../Monocraft.ttf') format('truetype'),
+       url('../Monocraft.ttc') format('collection');
+}
+
+@font-face {
+  font-family: 'Minecraft';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('../Monocraft.ttf') format('truetype'),
+       url('../Monocraft.ttc') format('collection');
+}
+
+@font-face {
+  font-family: 'Monocraft';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../Monocraft.ttf') format('truetype'),
+       url('../Monocraft.ttc') format('collection');
+}
+
+@font-face {
+  font-family: 'Monocraft';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('../Monocraft.ttf') format('truetype'),
+       url('../Monocraft.ttc') format('collection');
+}
