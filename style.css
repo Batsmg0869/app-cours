@@ -3,13 +3,25 @@
    ===================================================== */
 
 /* ---- Typographie Minecraft / Monocraft ---- */
-body.font-minecraft,
-body.font-minecraft *,
+/* Exclure les icônes Phosphor (i.ph et [class*="ph-"]) du changement de police */
+body.font-minecraft {
+    font-family: 'Minecraft', 'Monocraft', monospace !important;
+}
+body.font-minecraft *:not(i):not([class*="ph"]):not([class*="ph-"]) {
+    font-family: 'Minecraft', 'Monocraft', monospace !important;
+}
 body.font-minecraft input,
 body.font-minecraft button,
 body.font-minecraft select,
 body.font-minecraft textarea {
     font-family: 'Minecraft', 'Monocraft', monospace !important;
+}
+/* S'assurer que les icônes Phosphor gardent leur police */
+body.font-minecraft i[class*="ph"],
+body.font-minecraft .ph,
+body.font-minecraft [class^="ph-"],
+body.font-minecraft [class*=" ph-"] {
+    font-family: 'Phosphor', 'Phosphor-Bold', 'Phosphor-Fill', 'Phosphor-Light', 'Phosphor-Thin', 'Phosphor-Duotone' !important;
 }
 
 /* =====================================================
@@ -2923,6 +2935,14 @@ body[data-theme="minecraft"] *::after {
     animation-duration: 0.01ms !important;
     border-radius: 0 !important;
     transform: none !important;
+}
+
+/* S'assurer que les icônes Phosphor gardent leur police dans le thème Minecraft */
+body[data-theme="minecraft"] i[class*="ph"],
+body[data-theme="minecraft"] .ph,
+body[data-theme="minecraft"] [class^="ph-"],
+body[data-theme="minecraft"] [class*=" ph-"] {
+    font-family: 'Phosphor', 'Phosphor-Bold', 'Phosphor-Fill', 'Phosphor-Light', 'Phosphor-Thin', 'Phosphor-Duotone' !important;
 }
 
 /* Exception : les toasts et modals peuvent apparaître */
