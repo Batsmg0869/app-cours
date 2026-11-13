@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
-import { AppData, Task, CourseSubject, Grade, AppSettings, Course } from '../types';
+import { AppData, Task, CourseSubject, Grade, AppSettings, Course, TimetableSlot } from '../types';
 
 interface Toast {
   id: string;
@@ -34,6 +34,9 @@ interface AppContextType {
   addGrade: (grade: Omit<Grade, 'id'>) => void;
   deleteGrade: (id: string | number) => void;
   updateSettings: (newSettings: Partial<AppSettings>) => void;
+  addSlot: (slot: Omit<TimetableSlot, 'id'>) => void;
+  updateSlot: (slot: TimetableSlot) => void;
+  deleteSlot: (id: string | number) => void;
 }
 
 const defaultSettings: AppSettings = {
@@ -53,6 +56,7 @@ const initialData: AppData = {
   tasks: [],
   coursesList: [],
   grades: [],
+  timetable: [],
   settings: defaultSettings,
   userName: 'Baptiste Lecuyot',
 };
@@ -92,6 +96,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               tasks: Array.isArray(loaded.tasks) ? loaded.tasks : [],
               coursesList: Array.isArray(loaded.coursesList) ? loaded.coursesList : [],
               grades: Array.isArray(loaded.grades) ? loaded.grades : [],
+              timetable: Array.isArray(loaded.timetable) ? loaded.timetable : [],
               settings: { ...defaultSettings, ...(loaded.settings || {}) },
               userName: loaded.userName || loaded.settings?.userName || 'Baptiste Lecuyot',
             });
@@ -324,6 +329,49 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     [debouncedSave, showToast]
   );
 
+  const addSlot = useCallback(
+    (slotData: Omit<TimetableSlot, 'id'>) => {
+      const newSlot: TimetableSlot = {
+        ...slotData,
+        id: Date.now(),
+      };
+      setData((prev) => {
+        const next = { ...prev, timetable: [...(prev.timetable || []), newSlot] };
+        debouncedSave(next);
+        return next;
+      });
+      showToast('Créneau ajouté !', 'success');
+    },
+    [debouncedSave, showToast]
+  );
+
+  const updateSlot = useCallback(
+    (updatedSlot: TimetableSlot) => {
+      setData((prev) => {
+        const next = {
+          ...prev,
+          timetable: (prev.timetable || []).map((s) => (s.id === updatedSlot.id ? updatedSlot : s)),
+        };
+        debouncedSave(next);
+        return next;
+      });
+      showToast('Créneau mis à jour', 'success');
+    },
+    [debouncedSave, showToast]
+  );
+
+  const deleteSlot = useCallback(
+    (id: string | number) => {
+      setData((prev) => {
+        const next = { ...prev, timetable: (prev.timetable || []).filter((s) => s.id !== id) };
+        debouncedSave(next);
+        return next;
+      });
+      showToast('Créneau supprimé', 'info');
+    },
+    [debouncedSave, showToast]
+  );
+
   return (
     <AppContext.Provider
       value={{
@@ -352,6 +400,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         addGrade,
         deleteGrade,
         updateSettings,
+        addSlot,
+        updateSlot,
+        deleteSlot,
       }}
     >
       {children}

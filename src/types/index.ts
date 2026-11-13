@@ -45,6 +45,7 @@ export interface TimetableSlot {
   subject: string;
   room?: string;
   color?: string;
+  week?: 'A' | 'B' | 'AB';
 }
 
 export interface AppSettings {
