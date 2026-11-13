@@ -37,7 +37,7 @@ export const SettingsView: React.FC = () => {
   const { data, updateSettings, setActiveModal, showToast } = useApp();
 
   const [usernameInput, setUsernameInput] = useState(data.userName || data.settings.userName || 'Baptiste Lecuyot');
-  const [appVersion, setAppVersion] = useState<string>('2.5.6');
+  const [appVersion, setAppVersion] = useState<string>('2.6.0');
   const [updaterMsg, setUpdaterMsg] = useState<string | null>(null);
   const [checkingUpdates, setCheckingUpdates] = useState<boolean>(false);
   const [latestRelease, setLatestRelease] = useState<ReleaseAssetInfo | GitHubUpdateInfo | null>(null);
